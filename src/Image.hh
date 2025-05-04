@@ -74,7 +74,7 @@ struct Image
         return {m_uData.pMono, m_width, m_height, m_width};
     }
 
-    adt::Span2D<adt::u8>
+    const adt::Span2D<adt::u8>
     spanMono() const
     {
         ADT_ASSERT(m_eType == TYPE::MONO, " ");

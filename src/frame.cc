@@ -18,8 +18,8 @@ void
 run()
 {
     wl_display* pDisplay = app::client().m_pDisplay;
-    // const int fdDisplay = wl_display_get_fd(pDisplay);
-    // pollfd pfd {.fd = fdDisplay, .events = POLLIN, .revents {}};
+    const int fdDisplay = wl_display_get_fd(pDisplay);
+    pollfd pfd {.fd = fdDisplay, .events = POLLIN, .revents {}};
 
     const ttf::Rasterizer& rast = app::g_rasterizer;
     const int scale = static_cast<int>(rast.m_scale);
@@ -27,10 +27,14 @@ run()
 
     while (app::g_bRunning)
     {
-        ADT_ASSERT_ALWAYS(
-            wl_display_dispatch(pDisplay) >= 0,
-            ""
-        );
+        wl_display_flush(pDisplay);
+
+        const int pollStatus = poll(&pfd, 1, 1000 * 30);
+
+        if (pfd.revents & POLLIN)
+            wl_display_dispatch(pDisplay);
+
+        if (pollStatus == 0) g_bRedraw = true;
 
         if (g_bRedraw)
         {
@@ -38,13 +42,13 @@ run()
             {
                 u32* p = reinterpret_cast<u32*>(app::client().m_pPoolData);
                 Span2D<u32> spBuffer {p, bar.m_width, bar.m_height, bar.m_width};
-
+    
                 simd::i32Fillx4({(i32*)p, bar.m_width * bar.m_height}, 0xff777777);
-
+    
                 {
                     int xOff = 0;
                     const int yOff = 0;
-
+    
                     auto clDrawString = [&](
                             const int xOffset,
                             const StringView sv,
@@ -56,16 +60,16 @@ run()
                         for (const char ch : sv)
                         {
                             defer( thisXOff += xScale );
-
+    
                             if (ch == ' ') continue;
-
+    
                             MapResult mRes = rast.m_mapCodeToUV.search(ch);
                             if (mRes.eStatus == MAP_RESULT_STATUS::NOT_FOUND) continue;
-
+    
                             Pair<i16, i16> uv = mRes.value();
-
-                            Span2D<u8> spAtlas = rast.m_altas.spanMono();
-
+    
+                            const Span2D<u8> spAtlas = rast.m_altas.spanMono();
+    
                             const int maxx = utils::min(bar.m_width, maxAbsX);
                             for (int y = 0; y < scale; ++y)
                             {
@@ -86,40 +90,40 @@ run()
                             }
                         }
 GOTO_done:
-                        return thisXOff;
+                        return sv.size() * xScale;
                     };
-
+    
                     int xOffStatus = bar.m_width - bar.m_sfKbLayout.size()*xScale;
                     clDrawString(xOffStatus, bar.m_sfKbLayout, 0xff000000);
-
+    
                     {
                         time_t now = time(NULL);
                         struct tm tm {};
                         localtime_r(&now, &tm);
-
+    
                         char aBuff[64] {};
                         const int n = strftime(aBuff, sizeof(aBuff) - 1, "%Y-%m-%d %I:%M%p", &tm);
                         const int off = (n + 2)*xScale;
                         clDrawString(xOffStatus - off, StringView {aBuff, n}, 0xff000000);
                         xOffStatus -= off;
                     }
-
+    
                     xOffStatus -= xScale;
-
+    
                     for (const Tag& tag : bar.m_vTags)
                     {
                         const ssize tagI = bar.m_vTags.idx(&tag);
                         char aBuff[4] {};
                         const ssize n = print::toSpan(aBuff, "{}", 1 + tagI);
                         const int tagXBegin = xOff;
-
+    
                         const u32 color = [&]
                         {
                             if (tag.eState == ZDWL_IPC_OUTPUT_V2_TAG_STATE_ACTIVE)
                                 return 0xff000000U;
                             else return 0xff555555U;
                         }();
-
+    
                         xOff += xScale / 4;
                         if (tag.nClients > 0)
                         {
@@ -132,15 +136,14 @@ GOTO_done:
                                     spBuffer(x + xOff, y + yOff2) = color;
                             }
                         }
-
+    
                         xOff += xScale / 2;
                         xOff += clDrawString(xOff, StringView {aBuff, n}, color, xOffStatus);
                         xOff += xScale;
-
+    
                         const int tagXEnd = xOff;
-
+    
                         const int px = app::client().m_pointer.surfacePointerX;
-                        const int py = app::client().m_pointer.surfacePointerY;
                         if (px >= tagXBegin && px < tagXEnd &&
                             app::client().m_pointer.eButton == wl::Client::Pointer::BUTTON::LEFT
                         )
@@ -149,16 +152,17 @@ GOTO_done:
                         }
                     }
                     xOff += xScale;
-
+    
                     xOff += clDrawString(xOff, bar.m_sfLayoutIcon, 0xff000000, xOffStatus);
                     xOff += xScale * 2;
                     xOff += clDrawString(xOff, bar.m_sfTitle, 0xff000000, xOffStatus);
                 }
-
+    
                 wl_surface_attach(bar.m_pSurface, bar.m_pBuffer, 0, 0);
                 wl_surface_damage_buffer(bar.m_pSurface, 0, 0, bar.m_width, bar.m_height);
                 wl_surface_commit(bar.m_pSurface);
             }
+    
             g_bRedraw = false;
         }
 

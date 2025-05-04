@@ -296,49 +296,55 @@ Rasterizer::rasterizeAscii(IAllocator* pAlloc, Font* pFont, f32 scale)
     i16 yOff = 0;
     const i16 xStep = iScale * X_STEP;
 
-    /* 32 is the sizeof(clRasterize) (3 pointers + i16*2) */
-    Span<u8> spMem = app::gtl_scratch.nextMem<u8>(32 * (('~' - '!') + 1));
+    Span<u8> spMem = app::gtl_scratch.allMem<u8>();
     BufferAllocator arena {spMem};
 
-    for (u32 ch = '!'; ch <= '~'; ++ch)
+    try
     {
-        m_mapCodeToUV.insert(pAlloc, ch, {xOff, yOff});
-
-        Glyph* pGlyph = pFont->readGlyph(ch);
-        if (!pGlyph) continue;
-
-        auto clRasterize = [this, pFont, pGlyph, xOff, yOff]
+        for (u32 ch = '!'; ch <= '~'; ++ch)
         {
-            rasterizeGlyph(*pFont, *pGlyph, xOff, yOff);
-        };
+            m_mapCodeToUV.insert(pAlloc, ch, {xOff, yOff});
 
-        auto* pCl = arena.alloc<decltype(clRasterize)>(clRasterize);
+            Glyph* pGlyph = pFont->readGlyph(ch);
+            if (!pGlyph) continue;
 
-        /* no data dependency between altas regions */
-        app::g_threadPool.addRetry(+[](void* pArg) -> THREAD_STATUS
+            auto clRasterize = [this, pFont, pGlyph, xOff, yOff]
             {
-                auto& task = *static_cast<decltype(clRasterize)*>(pArg);
+                rasterizeGlyph(*pFont, *pGlyph, xOff, yOff);
+            };
 
-                try
+            auto* pCl = arena.alloc<decltype(clRasterize)>(clRasterize);
+
+            /* no data dependency between altas regions */
+            app::g_threadPool.addRetry(+[](void* pArg) -> THREAD_STATUS
                 {
-                    task();
-                }
-                catch (const AllocException& ex)
-                {
-                    ex.printErrorMsg(stderr);
-                }
+                    auto& task = *static_cast<decltype(clRasterize)*>(pArg);
 
-                return THREAD_STATUS(0);
-            },
-            pCl
-        );
+                    try
+                    {
+                        task();
+                    }
+                    catch (const AllocException& ex)
+                    {
+                        ex.printErrorMsg(stderr);
+                    }
 
-        if ((xOff += xStep) >= (nSquares*iScale) - xStep)
-        {
-            xOff = 0;
-            if ((yOff += iScale) >= (nSquares*iScale) - iScale)
-                break;
+                    return THREAD_STATUS(0);
+                },
+                pCl
+            );
+
+            if ((xOff += xStep) >= (nSquares*iScale) - xStep)
+            {
+                xOff = 0;
+                if ((yOff += iScale) >= (nSquares*iScale) - iScale)
+                    break;
+            }
         }
+    }
+    catch (const AllocException& ex)
+    {
+        ex.printErrorMsg(stderr);
     }
 
     app::g_threadPool.wait();
