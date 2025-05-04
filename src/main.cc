@@ -28,9 +28,10 @@ main()
         return 1;
     }
 
-    app::g_rasterizer.rasterizeAscii(StdAllocator::inst(), &app::g_font, 24);
+    const int scale = 24;
+    app::g_rasterizer.rasterizeAscii(StdAllocator::inst(), &app::g_font, scale);
 
-    wl::Client client {"Buh", 24};
+    wl::Client client {"Buh", scale};
     app::g_pClient = &client;
     defer( app::client().destroy() );
 

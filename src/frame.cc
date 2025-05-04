@@ -64,17 +64,24 @@ run()
 
                             Pair<i16, i16> uv = mRes.value();
 
-                            Span2D<u8> spMono = rast.m_altas.spanMono();
+                            Span2D<u8> spAtlas = rast.m_altas.spanMono();
 
+                            const int maxx = utils::min(bar.m_width, maxAbsX);
                             for (int y = 0; y < scale; ++y)
                             {
                                 for (int x = 0; x < xScale; ++x)
                                 {
                                     const int off = x + xOffset + thisXOff;
-                                    if (off >= bar.m_width || off >= maxAbsX) goto GOTO_done;
+                                    if (off >= maxx) goto GOTO_done;
 
-                                    const u8 val = spMono(x + uv.first, y + uv.second);
-                                    if (val > 0) spBuffer(x + xOffset + thisXOff, bar.m_height - y - yOff) = color;
+                                    const u8 val = spAtlas(x + uv.first, y + uv.second);
+                                    if (val > 0)
+                                    {
+                                        spBuffer(
+                                            x + xOffset + thisXOff,
+                                            bar.m_height - 1 - y - yOff
+                                        ) = color;
+                                    }
                                 }
                             }
                         }
@@ -82,7 +89,7 @@ GOTO_done:
                         return thisXOff;
                     };
 
-                    int xOffStatus = bar.m_width - (bar.m_sfKbLayout.size() * xScale);
+                    int xOffStatus = bar.m_width - bar.m_sfKbLayout.size()*xScale;
                     clDrawString(xOffStatus, bar.m_sfKbLayout, 0xff000000);
 
                     {

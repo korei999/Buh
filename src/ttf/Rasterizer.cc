@@ -7,7 +7,6 @@
 #include "adt/logs.hh"
 #include "adt/Array.hh"
 #include "adt/math.hh"
-#include "adt/Arena.hh"
 
 using namespace adt;
 
@@ -203,16 +202,16 @@ Rasterizer::rasterizeGlyph(const Font& font, const Glyph& glyph, int xOff, int y
         aIntersections.setSize(0);
         const f32 scanline = static_cast<f32>(row);
 
-        for (ssize pointIdx = 1; pointIdx < vCurvyPoints.size(); ++pointIdx)
+        for (ssize pointI = 1; pointI < vCurvyPoints.size(); ++pointI)
         {
-            const f32 x0 = (vCurvyPoints[pointIdx - 1].pos.x) * hScale;
-            const f32 x1 = (vCurvyPoints[pointIdx - 0].pos.x) * hScale;
+            const f32 x0 = (vCurvyPoints[pointI - 1].pos.x) * hScale;
+            const f32 x1 = (vCurvyPoints[pointI - 0].pos.x) * hScale;
 
-            const f32 y0 = (vCurvyPoints[pointIdx - 1].pos.y - yMin) * vScale;
-            const f32 y1 = (vCurvyPoints[pointIdx - 0].pos.y - yMin) * vScale;
+            const f32 y0 = (vCurvyPoints[pointI - 1].pos.y - yMin) * vScale;
+            const f32 y1 = (vCurvyPoints[pointI - 0].pos.y - yMin) * vScale;
 
-            if (vCurvyPoints[pointIdx].bEndOfCurve)
-                ++pointIdx;
+            if (vCurvyPoints[pointI].bEndOfCurve)
+                ++pointI;
 
             /* for the intersection all we need is to find what X is when our y = scanline or when y is equal to i of the loop
              *
@@ -297,8 +296,9 @@ Rasterizer::rasterizeAscii(IAllocator* pAlloc, Font* pFont, f32 scale)
     i16 yOff = 0;
     const i16 xStep = iScale * X_STEP;
 
-    Arena arena {SIZE_8K};
-    defer( arena.freeAll() );
+    /* 32 is the sizeof(clRasterize) (3 pointers + i16*2) */
+    Span<u8> spMem = app::gtl_scratch.nextMem<u8>(32 * (('~' - '!') + 1));
+    BufferAllocator arena {spMem};
 
     for (u32 ch = '!'; ch <= '~'; ++ch)
     {
@@ -317,11 +317,11 @@ Rasterizer::rasterizeAscii(IAllocator* pAlloc, Font* pFont, f32 scale)
         /* no data dependency between altas regions */
         app::g_threadPool.addRetry(+[](void* pArg) -> THREAD_STATUS
             {
-                auto* pTask = static_cast<decltype(clRasterize)*>(pArg);
+                auto& task = *static_cast<decltype(clRasterize)*>(pArg);
 
                 try
                 {
-                    (*pTask)();
+                    task();
                 }
                 catch (const AllocException& ex)
                 {
