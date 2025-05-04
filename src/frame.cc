@@ -38,12 +38,12 @@ run()
 
         if (g_bRedraw)
         {
-            for (auto& bar : app::client().m_vOutputBars)
+            for (auto& bar : app::client().m_vBars)
             {
-                u32* p = reinterpret_cast<u32*>(app::client().m_pPoolData);
+                u32* p = reinterpret_cast<u32*>(bar.m_pPoolData);
                 Span2D<u32> spBuffer {p, bar.m_width, bar.m_height, bar.m_width};
     
-                simd::i32Fillx4({(i32*)p, bar.m_width * bar.m_height}, 0xff777777);
+                simd::i32Fillx4({reinterpret_cast<i32*>(p), bar.m_width * bar.m_height}, 0xff777777);
     
                 {
                     int xOff = 0;
@@ -57,13 +57,13 @@ run()
                         ) -> int
                     {
                         int thisXOff = 0;
-                        for (const char ch : sv)
+                        for (const wchar_t ch : StringGlyphIt(sv))
                         {
                             defer( thisXOff += xScale );
     
-                            if (ch == ' ') continue;
+                            if (ch == L' ') continue;
     
-                            MapResult mRes = rast.m_mapCodeToUV.search(ch);
+                            MapResult mRes = rast.searchGlyph(ch);
                             if (mRes.eStatus == MAP_RESULT_STATUS::NOT_FOUND) continue;
     
                             Pair<i16, i16> uv = mRes.value();
@@ -148,7 +148,8 @@ GOTO_done:
                             app::client().m_pointer.eButton == wl::Client::Pointer::BUTTON::LEFT
                         )
                         {
-                            zdwl_ipc_output_v2_set_tags(bar.m_pDwlOutput, 1 << tagI, 0);
+                            if (app::client().m_pointer.pLastEnterSufrace == bar.m_pSurface)
+                                zdwl_ipc_output_v2_set_tags(bar.m_pDwlOutput, 1 << tagI, 0);
                         }
                     }
                     xOff += xScale;

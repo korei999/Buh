@@ -26,6 +26,8 @@ struct Rasterizer
     void destroy(adt::IAllocator* pAlloc);
     void rasterizeAscii(adt::IAllocator* pAlloc, Font* pFont, adt::f32 scale); /* NOTE: uses app::gtl_scratch */
 
+    adt::MapResult<adt::u32, adt::Pair<adt::i16, adt::i16>> searchGlyph(adt::u32 code) const { return m_mapCodeToUV.search(code); }
+
 protected:
     void rasterizeGlyph(const Font& pFont, const Glyph& pGlyph, int xOff, int yOff); /* NOTE: uses app::gtl_scratch */
 };

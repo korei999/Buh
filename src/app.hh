@@ -10,6 +10,8 @@
 namespace app
 {
 
+extern int g_argc;
+extern const char* const* g_argv;
 extern bool g_bRunning;
 extern wl::Client* g_pClient;
 extern ttf::Font g_font;

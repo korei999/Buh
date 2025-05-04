@@ -16,6 +16,7 @@ Client::pointerEnter(
     wl_fixed_t surface_y
 )
 {
+    m_pointer.pLastEnterSufrace = surface;
 }
 
 void
@@ -25,6 +26,7 @@ Client::pointerLeave(
     wl_surface* surface
 )
 {
+    m_pointer.pLastEnterSufrace = nullptr;
 }
 
 void

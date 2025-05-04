@@ -1,7 +1,5 @@
 #include "Client.hh"
 
-#include "shm.hh"
-
 #include "adt/assert.hh"
 #include "adt/logs.hh"
 #include "adt/StdAllocator.hh"
@@ -40,7 +38,8 @@ layerSurfaceConfigure(
     bar.m_width = width;
     bar.m_height = height;
 
-    bar.m_pClient->m_maxWidth = utils::max(bar.m_pClient->m_maxWidth, bar.m_width);
+    if (bar.m_pPoolData == nullptr)
+        bar.allocShmBuffer();
 
     zwlr_layer_surface_v1_ack_configure(zwlr_layer_surface_v1, serial);
 }
@@ -48,6 +47,11 @@ layerSurfaceConfigure(
 static void
 layerSurfaceClosed(void* p, zwlr_layer_surface_v1* zwlr_layer_surface_v1)
 {
+    LOG_BAD("closed\n");
+    ADT_ASSERT(p != nullptr, "p: {}\n", p);
+
+    Client::BarOutput& bar = *static_cast<Client::BarOutput*>(p);
+    // bar.destoryBuffer();
 }
 
 static const wl_registry_listener s_registryListener {
@@ -124,7 +128,7 @@ static const zdwl_ipc_output_v2_listener s_dwlOutputListener {
 #endif
 
 Client::Client(const char* ntsName, const int height)
-    : m_barHeight {height}
+    : m_sfName {ntsName}, m_barHeight {height}
 {
     ADT_ASSERT_ALWAYS(m_pDisplay = wl_display_connect({}), "");
     ADT_ASSERT_ALWAYS(m_pRegistry = wl_display_get_registry(m_pDisplay), "");
@@ -134,84 +138,44 @@ Client::Client(const char* ntsName, const int height)
 
     wl_shm_add_listener(m_pShm, &s_shmListener, this);
 
-    for (auto& bar : m_vOutputBars)
-    {
-        bar.m_pClient = this;
-
-        bar.m_pLayerSurface = zwlr_layer_shell_v1_get_layer_surface(
-            m_pLayerShell,
-            bar.m_pSurface,
-            bar.m_pOutput,
-            ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM,
-            ntsName
-        );
-
-        zwlr_layer_surface_v1_add_listener(bar.m_pLayerSurface, &s_layerSurfaceListener, &bar);
-        zwlr_layer_surface_v1_set_size(bar.m_pLayerSurface, 0, m_barHeight);
-        zwlr_layer_surface_v1_set_anchor(bar.m_pLayerSurface,
-            ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP |
-            ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT |
-            ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT
-        );
-        zwlr_layer_surface_v1_set_exclusive_zone(bar.m_pLayerSurface, m_barHeight);
-
-        ADT_ASSERT_ALWAYS(
-            bar.m_pDwlOutput = zdwl_ipc_manager_v2_get_output(m_pDwlManager, bar.m_pOutput),
-            "Failed to get dwl output"
-        );
-
-        zdwl_ipc_output_v2_add_listener(bar.m_pDwlOutput, &s_dwlOutputListener, &bar);
-
-        wl_surface_commit(bar.m_pSurface);
-    }
+    // for (auto& bar : m_vOutputBars)
+    // {
+    //     bar.m_pClient = this;
+    //
+    //     bar.m_pLayerSurface = zwlr_layer_shell_v1_get_layer_surface(
+    //         m_pLayerShell,
+    //         bar.m_pSurface,
+    //         bar.m_pOutput,
+    //         ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM,
+    //         ntsName
+    //     );
+    //
+    //     zwlr_layer_surface_v1_add_listener(bar.m_pLayerSurface, &s_layerSurfaceListener, &bar);
+    //     zwlr_layer_surface_v1_set_size(bar.m_pLayerSurface, 0, m_barHeight);
+    //     zwlr_layer_surface_v1_set_anchor(bar.m_pLayerSurface,
+    //         ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP |
+    //         ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT |
+    //         ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT
+    //     );
+    //     zwlr_layer_surface_v1_set_exclusive_zone(bar.m_pLayerSurface, m_barHeight);
+    //
+    //     ADT_ASSERT_ALWAYS(
+    //         bar.m_pDwlOutput = zdwl_ipc_manager_v2_get_output(m_pDwlManager, bar.m_pOutput),
+    //         "Failed to get dwl output"
+    //     );
+    //
+    //     zdwl_ipc_output_v2_add_listener(bar.m_pDwlOutput, &s_dwlOutputListener, &bar);
+    //
+    //     wl_surface_commit(bar.m_pSurface);
+    // }
 
     wl_display_dispatch(m_pDisplay);
-
-    initPool();
 }
 
 void
 Client::destroy()
 {
     LOG_NOTIFY("destroy()\n");
-}
-
-void
-Client::initPool()
-{
-    LOG_WARN("initPool()...\n");
-
-    const int stride = m_maxWidth * 4;
-    const int shmPoolSize = (m_barHeight * stride) * m_vOutputBars.size();
-
-    int fd = shm::allocFile(shmPoolSize);
-    m_pPoolData = static_cast<u8*>(mmap(nullptr, shmPoolSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
-    m_poolSize = shmPoolSize;
-    ADT_ASSERT_ALWAYS(m_pPoolData, "mmap() failed");
-
-    m_pShmPool = wl_shm_create_pool(m_pShm, fd, shmPoolSize);
-    ADT_ASSERT_ALWAYS(m_pShmPool, "wl_shm_create_pool() failed");
-
-    // m_pBuffer = wl_shm_pool_create_buffer(m_pShmPool, 0, m_width, m_height, stride, WL_SHM_FORMAT_ARGB8888);
-    // ADT_ASSERT_ALWAYS(m_pBuffer, "wl_shm_pool_create_buffer() failed");
-    //
-    // m_vTempBuff.setSize(m_pAlloc, surfaceBuffer().getStride());
-    // m_vDepthBuffer.setSize(m_pAlloc, m_stride * m_height);
-    // m_pSurfaceBufferBind = m_pPoolData;
-
-    {
-        int off = 0;
-        for (auto& bar : m_vOutputBars)
-        {
-            ADT_ASSERT_ALWAYS(
-                bar.m_pBuffer = wl_shm_pool_create_buffer(
-                    m_pShmPool, off, bar.m_width, m_barHeight, bar.m_width * 4, WL_SHM_FORMAT_ARGB8888
-                ),
-                ""
-            );
-            off += bar.m_width * 4 * m_barHeight;
-        }
-    }
 }
 
 void
@@ -222,8 +186,6 @@ Client::registryGlobal(
     u32 version
 )
 {
-    // LOG("interface: '{}', version: {}, name: {}\n", interface, version, name);
-
     StringView svInterface = StringView(interface);
 
     if (svInterface == wl_compositor_interface.name)
@@ -267,15 +229,48 @@ Client::registryGlobal(
             ),
             ""
         );
-        LOG_GOOD("interface: '{}', version: {}, name: {}\n", interface, version, name);
+        LOG_GOOD("interface: '{}', version: {}, name: {}, registry: {}\n", interface, version, name, wl_registry);
 
         auto* pSurface = wl_compositor_create_surface(m_pCompositor);
         ADT_ASSERT_ALWAYS(pSurface, "wl_compositor_create_surface(m_pCompositor) failed");
 
-        m_vOutputBars.push(StdAllocator::inst(), {
-            .m_pOutput = p,
-            .m_pSurface = pSurface,
-        });
+        m_vBars.push(StdAllocator::inst(), {});
+
+        {
+            auto& bar = m_vBars.last();
+
+            bar.m_pOutput = p;
+            bar.m_pSurface = pSurface;
+            bar.m_outputName = name;
+
+            bar.m_pClient = this;
+
+            bar.m_pLayerSurface = zwlr_layer_shell_v1_get_layer_surface(
+                m_pLayerShell,
+                bar.m_pSurface,
+                bar.m_pOutput,
+                ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM,
+                m_sfName.data()
+            );
+
+            zwlr_layer_surface_v1_add_listener(bar.m_pLayerSurface, &s_layerSurfaceListener, &bar);
+            zwlr_layer_surface_v1_set_size(bar.m_pLayerSurface, 0, m_barHeight);
+            zwlr_layer_surface_v1_set_anchor(bar.m_pLayerSurface,
+                ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP |
+                ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT |
+                ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT
+            );
+            zwlr_layer_surface_v1_set_exclusive_zone(bar.m_pLayerSurface, m_barHeight);
+
+            ADT_ASSERT_ALWAYS(
+                bar.m_pDwlOutput = zdwl_ipc_manager_v2_get_output(m_pDwlManager, bar.m_pOutput),
+                "Failed to get dwl output"
+            );
+
+            zdwl_ipc_output_v2_add_listener(bar.m_pDwlOutput, &s_dwlOutputListener, &bar);
+
+            wl_surface_commit(bar.m_pSurface);
+        }
 
         wl_output_add_listener(p, &s_outputListener, this);
     }
@@ -309,6 +304,15 @@ Client::registryGlobalRemove(
     u32 name
 )
 {
+    for (ssize i = 0; i < m_vBars.size(); ++i)
+    {
+        BarOutput& bar = m_vBars[i];
+        if (name == bar.m_outputName)
+        {
+            bar.destroy();
+            m_vBars.popAsLast(i);
+        }
+    }
 }
 
 void
@@ -343,6 +347,10 @@ Client::outputMode(
     i32 refresh
 )
 {
+    LOG_NOTIFY(
+        "(mode): output: '{}', flags: '{}', width: '{}', height: '{}', refresh: '{}'\n",
+        wl_output, flags, width, height, refresh
+    );
 }
 
 void
@@ -373,6 +381,7 @@ Client::outputDescription(
     const char* description
 )
 {
+    LOG_NOTIFY("{}\n", description);
 }
 
 void

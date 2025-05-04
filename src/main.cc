@@ -6,11 +6,47 @@
 
 #include "font.bin"
 
+#include <string.h>
+
 using namespace adt;
 
-int
-main()
+static int s_barHeight = 24;
+
+static void
+parseArgs(const int argc, const char* const* argv)
 {
+    for (int i = 1; i < argc; ++i)
+    {
+        const StringView sv = argv[i];
+
+        if (sv.beginsWith("--"))
+        {
+            if (sv == "--height")
+            {
+                if (i + 1 < argc)
+                {
+                    ++i;
+                    int num = atoi(argv[i]);
+                    if (num == 0)
+                    {
+                        print::err("failed to parse the height number\n");
+                        exit(1);
+                    }
+                    s_barHeight = num;
+                }
+            }
+        }
+        else return;
+    }
+}
+
+int
+main(const int argc, const char* const* argv)
+{
+    app::g_argc = argc, app::g_argv = argv;
+
+    parseArgs(argc, argv);
+
     app::g_threadPool = ThreadPool<128> {StdAllocator::inst(),
         +[](void*) { app::allocScratchForThisThread(SIZE_1M); }, {},
         +[](void*) { app::destroyScratchForThisThread(); }, {},
@@ -28,10 +64,9 @@ main()
         return 1;
     }
 
-    const int scale = 24;
-    app::g_rasterizer.rasterizeAscii(StdAllocator::inst(), &app::g_font, scale);
+    app::g_rasterizer.rasterizeAscii(StdAllocator::inst(), &app::g_font, s_barHeight);
 
-    wl::Client client {"Buh", scale};
+    wl::Client client {"Buh", s_barHeight};
     app::g_pClient = &client;
     defer( app::client().destroy() );
 

@@ -21,12 +21,17 @@ struct Client
         wl_buffer* m_pBuffer {};
         zdwl_ipc_output_v2* m_pDwlOutput {};
 
+        wl_shm_pool* m_pShmPool {};
+        adt::u8* m_pPoolData {};
+        adt::ssize m_poolSize {};
+
         int m_width {};
         int m_height {};
         int m_stride {};
+        adt::u32 m_outputName {};
 
-        adt::StringFixed<128> m_sfTitle {};
-        adt::StringFixed<128> m_sfAppid {};
+        adt::StringFixed<64> m_sfTitle {};
+        adt::StringFixed<64> m_sfAppid {};
         adt::StringFixed<8> m_sfLayoutIcon {};
         adt::StringFixed<32> m_sfKbLayout {};
 
@@ -34,8 +39,8 @@ struct Client
 
         /* */
 
-        void createBuffer(int width, int height);
-        // void 
+        void allocShmBuffer();
+        void destroy();
 
         void toggleVisibility(zdwl_ipc_output_v2* zdwl_ipc_output_v2);
         void active(zdwl_ipc_output_v2* zdwl_ipc_output_v2, uint32_t active);
@@ -65,6 +70,7 @@ struct Client
             TASK = 0x117,
         };
 
+        wl_surface* pLastEnterSufrace {};
         adt::f64 surfacePointerX {};
         adt::f64 surfacePointerY {};
         adt::u32 time {};
@@ -74,17 +80,15 @@ struct Client
 
     /* */
 
+    adt::StringFixed<32> m_sfName {};
+
     wl_display* m_pDisplay {};
     wl_registry* m_pRegistry {};
     wl_compositor* m_pCompositor {};
 
-    adt::Vec<BarOutput> m_vOutputBars {};
+    adt::Vec<BarOutput> m_vBars {};
 
     wl_shm* m_pShm {};
-    wl_shm_pool* m_pShmPool {};
-    adt::u8* m_pPoolData {};
-    adt::ssize m_poolSize {};
-    int m_maxWidth {};
     int m_barHeight {};
 
     wl_seat* m_pSeat {};
@@ -141,8 +145,6 @@ struct Client
 
     void dwlTags(zdwl_ipc_manager_v2* zdwl_ipc_manager_v2, uint32_t amount);
     void dwlLayout(zdwl_ipc_manager_v2* zdwl_ipc_manager_v2, const char* name);
-
-    void initPool();
 };
 
 } /* namespace wl */

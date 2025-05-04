@@ -7,6 +7,8 @@ using namespace adt;
 namespace app
 {
 
+int g_argc {};
+const char* const* g_argv {};
 bool g_bRunning {};
 wl::Client* g_pClient {};
 ttf::Font g_font {};

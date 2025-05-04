@@ -1,9 +1,10 @@
 #include "Client.hh"
 
+#include "wl/shm.hh"
 #include "frame.hh"
 
 #include "adt/StdAllocator.hh"
-#include "adt/logs.hh"
+#include "adt/defer.hh"
 
 using namespace adt;
 
@@ -11,30 +12,38 @@ namespace wl
 {
 
 void
-Client::BarOutput::createBuffer(int width, int height)
+Client::BarOutput::allocShmBuffer()
 {
-    m_width = width;
-    m_height = height;
+    const int stride = m_width * 4;
+    const int shmPoolSize = (m_pClient->m_barHeight * stride);
 
-    const int stride = m_stride * 4;
-    const int shmPoolSize = m_height * stride;
+    const int fd = shm::allocFile(shmPoolSize);
+    defer( close(fd) );
+    m_pPoolData = static_cast<u8*>(mmap(nullptr, shmPoolSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
+    m_poolSize = shmPoolSize;
+    ADT_ASSERT_ALWAYS(m_pPoolData, "mmap() failed");
 
-    // wl_shm_create_pool();
+    m_pShmPool = wl_shm_create_pool(m_pClient->m_pShm, fd, shmPoolSize);
+    ADT_ASSERT_ALWAYS(m_pShmPool, "wl_shm_create_pool() failed");
 
-    // int fd = shm::allocFile(shmPoolSize);
-    // m_pClient->m_pPoolData = static_cast<u8*>(mmap(nullptr, shmPoolSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
-    // m_poolSize = shmPoolSize;
-    // ADT_ASSERT_ALWAYS(m_pPoolData, "mmap() failed");
-    //
-    // m_pShmPool = wl_shm_create_pool(m_pShm, fd, shmPoolSize);
-    // ADT_ASSERT_ALWAYS(m_pShmPool, "wl_shm_create_pool() failed");
-    //
-    // m_pBuffer = wl_shm_pool_create_buffer(m_pShmPool, 0, m_width, m_height, stride, WL_SHM_FORMAT_ARGB8888);
-    // ADT_ASSERT_ALWAYS(m_pBuffer, "wl_shm_pool_create_buffer() failed");
-    //
-    // m_vTempBuff.setSize(m_pAlloc, surfaceBuffer().getStride());
-    // m_vDepthBuffer.setSize(m_pAlloc, m_stride * m_height);
-    // m_pSurfaceBufferBind = m_pPoolData;
+    ADT_ASSERT_ALWAYS(
+        m_pBuffer = wl_shm_pool_create_buffer(
+            m_pShmPool, 0, m_width, m_pClient->m_barHeight, m_width * 4, WL_SHM_FORMAT_ARGB8888
+        ),
+        ""
+    );
+}
+
+void
+Client::BarOutput::destroy()
+{
+    wl_shm_pool_destroy(m_pShmPool);
+    munmap(m_pPoolData, m_poolSize);
+    wl_output_destroy(m_pOutput);
+    zwlr_layer_surface_v1_destroy(m_pLayerSurface);
+    wl_surface_destroy(m_pSurface);
+    zdwl_ipc_output_v2_destroy(m_pDwlOutput);
+    wl_buffer_destroy(m_pBuffer);
 }
 
 void
