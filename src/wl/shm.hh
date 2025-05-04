@@ -68,4 +68,4 @@ allocFile(size_t size)
     return fd;
 }
 
-} /* namespace platform::wayland::shm */
+} /* namespace wayland::shm */

@@ -21,14 +21,16 @@ run()
     // const int fdDisplay = wl_display_get_fd(pDisplay);
     // pollfd pfd {.fd = fdDisplay, .events = POLLIN, .revents {}};
 
+    const ttf::Rasterizer& rast = app::g_rasterizer;
+    const int scale = static_cast<int>(rast.m_scale);
+    const int xScale = scale * ttf::Rasterizer::X_STEP;
+
     while (app::g_bRunning)
     {
         ADT_ASSERT_ALWAYS(
             wl_display_dispatch(pDisplay) >= 0,
             ""
         );
-
-        LOG_NOTIFY("redraw: {}\n", g_bRedraw);
 
         if (g_bRedraw)
         {
@@ -40,10 +42,6 @@ run()
                 simd::i32Fillx4({(i32*)p, bar.m_width * bar.m_height}, 0xff777777);
 
                 {
-                    ttf::Rasterizer& rast = app::g_rasterizer;
-                    const int scale = static_cast<int>(rast.m_scale);
-                    const int xScale = scale * ttf::Rasterizer::X_STEP;
-
                     int xOff = 0;
                     const int yOff = 0;
 
@@ -103,8 +101,9 @@ GOTO_done:
 
                     for (const Tag& tag : bar.m_vTags)
                     {
+                        const ssize tagI = bar.m_vTags.idx(&tag);
                         char aBuff[4] {};
-                        const ssize n = print::toSpan(aBuff, "{}", 1 + bar.m_vTags.idx(&tag));
+                        const ssize n = print::toSpan(aBuff, "{}", 1 + tagI);
 
                         const u32 color = [&]
                         {
@@ -125,11 +124,23 @@ GOTO_done:
                                     spBuffer(x + xOff, y + yOff2) = color;
                             }
                         }
+
+                        const int tagXBegin = xOff;
+
                         xOff += xScale / 2;
-
                         xOff += clDrawString(xOff, StringView {aBuff, n}, color, xOffStatus);
-
                         xOff += xScale;
+
+                        const int tagXEnd = xOff;
+
+                        const int px = app::client().m_pointer.surfacePointerX;
+                        const int py = app::client().m_pointer.surfacePointerY;
+                        if (px >= tagXBegin && px < tagXEnd &&
+                            app::client().m_pointer.eButton == wl::Client::Pointer::BUTTON::LEFT
+                        )
+                        {
+                            zdwl_ipc_output_v2_set_tags(bar.m_pDwlOutput, 1 << tagI, 0);
+                        }
                     }
                     xOff += xScale;
 
@@ -144,6 +155,9 @@ GOTO_done:
             }
             g_bRedraw = false;
         }
+
+        app::client().m_pointer.eButton = {};
+        app::client().m_pointer.state = {};
     }
 }
 

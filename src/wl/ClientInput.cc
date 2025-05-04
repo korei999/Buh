@@ -1,5 +1,7 @@
 #include "Client.hh"
 
+#include "frame.hh"
+
 #include "adt/logs.hh"
 
 namespace wl
@@ -33,6 +35,9 @@ Client::pointerMotion(
     wl_fixed_t surface_y
 )
 {
+    m_pointer.surfacePointerX = wl_fixed_to_double(surface_x);
+    m_pointer.surfacePointerY = wl_fixed_to_double(surface_y);
+    // LOG_NOTIFY("xy: [{}, {}]\n", wl_fixed_to_double(surface_x), wl_fixed_to_double(surface_y));
 }
 
 void
@@ -44,6 +49,13 @@ Client::pointerButton(
     uint32_t state
 )
 {
+    m_pointer.time = time;
+    m_pointer.eButton = Client::Pointer::BUTTON(button);
+    m_pointer.state = state;
+
+    // LOG_NOTIFY("button: {}, state: {}\n", button, state);
+
+    if (m_pointer.state) frame::g_bRedraw = true;
 }
 
 void

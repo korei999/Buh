@@ -35,6 +35,7 @@ struct Client
         /* */
 
         void createBuffer(int width, int height);
+        // void 
 
         void toggleVisibility(zdwl_ipc_output_v2* zdwl_ipc_output_v2);
         void active(zdwl_ipc_output_v2* zdwl_ipc_output_v2, uint32_t active);
@@ -47,6 +48,28 @@ struct Client
         void frame(zdwl_ipc_output_v2* zdwl_ipc_output_v2);
         void fullscreen(zdwl_ipc_output_v2* zdwl_ipc_output_v2, uint32_t is_fullscreen);
         void floating(zdwl_ipc_output_v2* zdwl_ipc_output_v2, uint32_t is_floating);
+    };
+
+    struct Pointer
+    {
+        enum class BUTTON : adt::u32
+        {
+            MOUSE = 0x110,
+            LEFT = 0x110,
+            RIGHT = 0x111,
+            MIDDLE = 0x112,
+            SIDE = 0x113,
+            EXTRA = 0x114,
+            FORWARD = 0x115,
+            BACK = 0x116,
+            TASK = 0x117,
+        };
+
+        adt::f64 surfacePointerX {};
+        adt::f64 surfacePointerY {};
+        adt::u32 time {};
+        BUTTON eButton {};
+        adt::u32 state {};
     };
 
     /* */
@@ -72,6 +95,8 @@ struct Client
     zwlr_layer_surface_v1* m_pLayerSurface {};
 
     zdwl_ipc_manager_v2* m_pDwlManager {};
+
+    Pointer m_pointer {};
 
     /* */
 
