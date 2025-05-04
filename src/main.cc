@@ -2,8 +2,9 @@
 #include "frame.hh"
 
 #include "adt/defer.hh"
-#include "adt/file.hh"
 #include "adt/StdAllocator.hh"
+
+#include "font.bin"
 
 using namespace adt;
 
@@ -21,19 +22,11 @@ main()
     app::allocScratchForThisThread(SIZE_1M);
     defer( app::destroyScratchForThisThread() );
 
-    file::Mapped fmFont = file::map("LiberationMono-Regular.ttf");
-    if (!fmFont)
-    {
-        print::err("failed to load the font\n");
-        return 1;
-    }
-
-    if (!bool(app::g_font = ttf::Font {StdAllocator::inst(), fmFont}))
+    if (!bool(app::g_font = ttf::Font {StdAllocator::inst(), StringView {(char*)LiberationMono_Regular_ttf, LiberationMono_Regular_ttf_len}}))
     {
         print::err("failed to parse the font\n");
         return 1;
     }
-    fmFont.unmap();
 
     app::g_rasterizer.rasterizeAscii(StdAllocator::inst(), &app::g_font, 24);
 

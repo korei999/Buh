@@ -104,6 +104,7 @@ GOTO_done:
                         const ssize tagI = bar.m_vTags.idx(&tag);
                         char aBuff[4] {};
                         const ssize n = print::toSpan(aBuff, "{}", 1 + tagI);
+                        const int tagXBegin = xOff;
 
                         const u32 color = [&]
                         {
@@ -124,8 +125,6 @@ GOTO_done:
                                     spBuffer(x + xOff, y + yOff2) = color;
                             }
                         }
-
-                        const int tagXBegin = xOff;
 
                         xOff += xScale / 2;
                         xOff += clDrawString(xOff, StringView {aBuff, n}, color, xOffStatus);

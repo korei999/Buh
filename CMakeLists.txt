@@ -110,6 +110,7 @@ endif()
 
 include_directories(BEFORE "libs")
 include_directories(BEFORE "src")
+include_directories(BEFORE "assets")
 
 add_definitions("-DADT_LOGS_LESS_TYPING")
 add_definitions("-DADT_DEFER_LESS_TYPING")
