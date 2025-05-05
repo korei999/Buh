@@ -35,11 +35,19 @@ layerSurfaceConfigure(
     Client::Bar& bar = *static_cast<Client::Bar*>(p);
     ADT_ASSERT(bar.m_pLayerSurface == zwlr_layer_surface_v1, "");
 
-    bar.m_width = width;
-    bar.m_height = height;
-
     if (bar.m_pPoolData == nullptr)
+    {
+        bar.m_width = width;
+        bar.m_height = height;
         bar.allocShmBuffer();
+    }
+    else if (bar.m_width != static_cast<int>(width) || bar.m_height != static_cast<int>(height))
+    {
+        bar.destroyShmBuffer();
+        bar.m_width = width;
+        bar.m_height = height;
+        bar.allocShmBuffer();
+    }
 
     zwlr_layer_surface_v1_ack_configure(zwlr_layer_surface_v1, serial);
 }

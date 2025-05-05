@@ -47,11 +47,12 @@ main(const int argc, const char* const* argv)
 
     parseArgs(argc, argv);
 
-    app::g_threadPool = ThreadPool<128> {StdAllocator::inst(),
+    new(&app::g_threadPool) ThreadPool<128> {StdAllocator::inst(),
         +[](void*) { app::allocScratchForThisThread(SIZE_1M); }, {},
         +[](void*) { app::destroyScratchForThisThread(); }, {},
         utils::max(ADT_GET_NPROCS() - 1, 2)
     };
+
     app::g_threadPool.start();
     defer( app::g_threadPool.destroy(StdAllocator::inst()) );
 

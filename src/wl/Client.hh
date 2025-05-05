@@ -40,6 +40,7 @@ struct Client
         /* */
 
         void allocShmBuffer();
+        void destroyShmBuffer();
         void destroy();
 
         void toggleVisibility(zdwl_ipc_output_v2* zdwl_ipc_output_v2);

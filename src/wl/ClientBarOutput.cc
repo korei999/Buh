@@ -35,10 +35,16 @@ Client::Bar::allocShmBuffer()
 }
 
 void
-Client::Bar::destroy()
+Client::Bar::destroyShmBuffer()
 {
     wl_shm_pool_destroy(m_pShmPool);
     munmap(m_pPoolData, m_poolSize);
+}
+
+void
+Client::Bar::destroy()
+{
+    destroyShmBuffer();
     wl_output_destroy(m_pOutput);
     zwlr_layer_surface_v1_destroy(m_pLayerSurface);
     wl_surface_destroy(m_pSurface);

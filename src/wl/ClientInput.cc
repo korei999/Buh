@@ -3,7 +3,6 @@
 #include "frame.hh"
 
 #include "adt/logs.hh"
-#include "adt/StdAllocator.hh"
 
 using namespace adt;
 
