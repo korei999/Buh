@@ -4,6 +4,7 @@
 #include "config.hh"
 
 #include "adt/logs.hh"
+#include "adt/file.hh"
 #include "adt/simd.hh"
 
 #include <poll.h>
@@ -26,11 +27,18 @@ run()
     const int scale = static_cast<int>(rast.m_scale);
     const int xScale = scale * ttf::Rasterizer::X_STEP;
 
+    f64 updateRateMS = 1000.0 * 60.0;
+    for (const auto& entry : config::inl_aStatusEntries)
+    {
+        if (entry.updateRateMS > 0.0)
+            updateRateMS = utils::min(updateRateMS, entry.updateRateMS);
+    }
+
     while (app::g_bRunning)
     {
         wl_display_flush(pDisplay);
 
-        const int pollStatus = poll(&pfd, 1, 1000 * 30);
+        const int pollStatus = poll(&pfd, 1, static_cast<int>(updateRateMS));
 
         if (pfd.revents & POLLIN)
             wl_display_dispatch(pDisplay);
@@ -40,6 +48,8 @@ run()
         if (g_bRedraw)
         {
             defer( g_bRedraw = false );
+
+            const f64 currTime = utils::timeNowMS();
 
             for (auto& bar : app::client().m_vBars)
             {
@@ -111,18 +121,34 @@ GOTO_done:
                             switch (entry.eType)
                             {
                                 case config::StatusEntry::TYPE::TEXT:
-                                clDrawEntry(entry.ntsText);
+                                clDrawEntry(entry.nts);
                                 break;
 
                                 case config::StatusEntry::TYPE::DATE_TIME:
                                 {
-                                    time_t now = time(NULL);
-                                    struct tm tm {};
-                                    localtime_r(&now, &tm);
+                                    auto clWrite = [&]
+                                    {
+                                        StringFixed<64> sf {};
 
-                                    char aBuff[64] {};
-                                    const int n = strftime(aBuff, sizeof(aBuff) - 1, entry.ntsText, &tm);
-                                    clDrawEntry(StringView {aBuff, n});
+                                        time_t now = time(NULL);
+                                        struct tm tm {};
+                                        localtime_r(&now, &tm);
+
+                                        strftime(sf.data(), sf.size() - 1, entry.nts, &tm);
+
+                                        return sf;
+                                    };
+
+                                    static f64 s_lastUpdateTime = utils::timeNowMS();
+                                    static StringFixed<64> s_sfDateTime = clWrite();
+
+                                    if (s_lastUpdateTime + entry.updateRateMS <= currTime)
+                                    {
+                                        s_sfDateTime = clWrite();
+                                        s_lastUpdateTime = currTime;
+                                    }
+
+                                    clDrawEntry(s_sfDateTime);
                                 }
                                 break;
 
@@ -131,6 +157,28 @@ GOTO_done:
                                 break;
 
                                 case config::StatusEntry::TYPE::FILE_WATCH:
+                                {
+                                    auto clWrite = [&]
+                                    {
+                                        StringFixed<64> sf {};
+                                        sf = file::load<64>(entry.nts);
+                                        if (entry.pfnFormatString)
+                                            sf = entry.pfnFormatString(sf.data());
+
+                                        return sf;
+                                    };
+
+                                    static f64 s_lastUpdateTime = utils::timeNowMS();
+                                    static StringFixed<64> s_sfFile = clWrite();
+
+                                    if (s_lastUpdateTime + entry.updateRateMS <= currTime)
+                                    {
+                                        s_sfFile = clWrite();
+                                        s_lastUpdateTime = currTime;
+                                    }
+
+                                    clDrawEntry(s_sfFile);
+                                }
                                 break;
                             }
                             xOffStatus -= xScale*2;

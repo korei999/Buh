@@ -27,7 +27,7 @@ parseArgs(const int argc, const char* const* argv)
                     int num = atoi(argv[i]);
                     if (num == 0)
                     {
-                        print::err("failed to parse the height number\n");
+                        print::err("height should be '> 0', got: '{}'\n", num);
                         exit(1);
                     }
                     s_barHeight = num;
