@@ -30,7 +30,7 @@ layerSurfaceConfigure(
 )
 {
     ADT_ASSERT(p != nullptr, "p: {}\n", p);
-    LOG_WARN("width/height: [{}]\n", Pair {width, height});
+    LOG_WARN("width/height: [{}], surface: {}\n", Pair {width, height}, zwlr_layer_surface_v1);
 
     Client::Bar& bar = *static_cast<Client::Bar*>(p);
     ADT_ASSERT(bar.m_pLayerSurface == zwlr_layer_surface_v1, "");
@@ -160,7 +160,7 @@ Client::registryGlobal(
     {
         ADT_ASSERT_ALWAYS(
             m_pSeat = static_cast<wl_seat*>(
-                wl_registry_bind(wl_registry, name, &wl_seat_interface, version)
+                wl_registry_bind(wl_registry, name, &wl_seat_interface, 4)
             ),
             ""
         );
@@ -199,7 +199,7 @@ Client::registryGlobal(
 
             bar.m_pOutput = p;
             bar.m_pSurface = pSurface;
-            bar.m_outputName = name;
+            bar.m_outputRegistryName = name;
 
             bar.m_pClient = this;
 
@@ -266,7 +266,7 @@ Client::registryGlobalRemove(
     for (ssize i = 0; i < m_vBars.size(); ++i)
     {
         Bar& bar = m_vBars[i];
-        if (name == bar.m_outputName)
+        if (name == bar.m_outputRegistryName)
         {
             bar.destroy();
             m_vBars.popAsLast(i);

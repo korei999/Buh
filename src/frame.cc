@@ -1,6 +1,7 @@
 #include "frame.hh"
 
 #include "app.hh"
+#include "config.hh"
 
 #include "adt/logs.hh"
 #include "adt/simd.hh"
@@ -38,6 +39,8 @@ run()
 
         if (g_bRedraw)
         {
+            defer( g_bRedraw = false );
+
             for (auto& bar : app::client().m_vBars)
             {
                 u32* p = reinterpret_cast<u32*>(bar.m_pPoolData);
@@ -93,22 +96,46 @@ GOTO_done:
                         return sv.size() * xScale;
                     };
     
-                    int xOffStatus = bar.m_width - bar.m_sfKbLayout.size()*xScale;
-                    clDrawString(xOffStatus, bar.m_sfKbLayout, 0xff000000);
-    
+                    int xOffStatus = bar.m_width;
                     {
-                        time_t now = time(NULL);
-                        struct tm tm {};
-                        localtime_r(&now, &tm);
-    
-                        char aBuff[64] {};
-                        const int n = strftime(aBuff, sizeof(aBuff) - 1, "%Y-%m-%d %I:%M%p", &tm);
-                        const int off = (n + 2)*xScale;
-                        clDrawString(xOffStatus - off, StringView {aBuff, n}, 0xff000000);
-                        xOffStatus -= off;
+                        auto clDrawEntry = [&](const StringView sv)
+                        {
+                            xOffStatus -= sv.size() * xScale;
+                            clDrawString(xOffStatus, sv, 0xff000000);
+                        };
+
+                        const ssize last = utils::size(config::inl_aStatusEntries) - 1;
+                        for (ssize i = last; i >= 0; --i)
+                        {
+                            const config::StatusEntry& entry = config::inl_aStatusEntries[i];
+                            switch (entry.eType)
+                            {
+                                case config::StatusEntry::TYPE::TEXT:
+                                clDrawEntry(entry.ntsText);
+                                break;
+
+                                case config::StatusEntry::TYPE::DATE_TIME:
+                                {
+                                    time_t now = time(NULL);
+                                    struct tm tm {};
+                                    localtime_r(&now, &tm);
+
+                                    char aBuff[64] {};
+                                    const int n = strftime(aBuff, sizeof(aBuff) - 1, entry.ntsText, &tm);
+                                    clDrawEntry(StringView {aBuff, n});
+                                }
+                                break;
+
+                                case config::StatusEntry::TYPE::KEYBOARD_LAYOUT:
+                                clDrawEntry(bar.m_sfKbLayout);
+                                break;
+
+                                case config::StatusEntry::TYPE::FILE_WATCH:
+                                break;
+                            }
+                            xOffStatus -= xScale*2;
+                        }
                     }
-    
-                    xOffStatus -= xScale;
     
                     for (const Tag& tag : bar.m_vTags)
                     {
@@ -163,8 +190,6 @@ GOTO_done:
                 wl_surface_damage_buffer(bar.m_pSurface, 0, 0, bar.m_width, bar.m_height);
                 wl_surface_commit(bar.m_pSurface);
             }
-    
-            g_bRedraw = false;
         }
 
         app::client().m_pointer.eButton = {};

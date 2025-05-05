@@ -5,6 +5,7 @@
 
 #include "adt/StdAllocator.hh"
 #include "adt/defer.hh"
+#include "adt/logs.hh"
 
 using namespace adt;
 
@@ -39,6 +40,7 @@ Client::Bar::destroyShmBuffer()
 {
     wl_shm_pool_destroy(m_pShmPool);
     munmap(m_pPoolData, m_poolSize);
+    m_height = 0, m_width = 0, m_stride = 0;
 }
 
 void
@@ -55,6 +57,9 @@ Client::Bar::destroy()
 void
 Client::Bar::toggleVisibility([[maybe_unused]] zdwl_ipc_output_v2* zdwl_ipc_output_v2)
 {
+    utils::toggle(&m_bHidden);
+    LOG_NOTIFY("toggleVisibility: {}\n", m_bHidden);
+    // frame::g_bRedraw = true;
 }
 
 void

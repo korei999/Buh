@@ -19,6 +19,7 @@ struct Client
         wl_surface* m_pSurface {};
         zwlr_layer_surface_v1* m_pLayerSurface {};
         wl_buffer* m_pBuffer {};
+        wl_buffer* m_pBufferHidden {};
         zdwl_ipc_output_v2* m_pDwlOutput {};
 
         wl_shm_pool* m_pShmPool {};
@@ -28,14 +29,16 @@ struct Client
         int m_width {};
         int m_height {};
         int m_stride {};
-        adt::u32 m_outputName {};
+        adt::u32 m_outputRegistryName {};
 
-        adt::StringFixed<64> m_sfTitle {};
-        adt::StringFixed<64> m_sfAppid {};
+        adt::StringFixed<128> m_sfTitle {};
+        adt::StringFixed<128> m_sfAppid {};
         adt::StringFixed<8> m_sfLayoutIcon {};
         adt::StringFixed<32> m_sfKbLayout {};
 
         adt::Vec<Tag> m_vTags {};
+
+        bool m_bHidden {};
 
         /* */
 

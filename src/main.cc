@@ -6,8 +6,6 @@
 
 #include "font.bin"
 
-#include <string.h>
-
 using namespace adt;
 
 static int s_barHeight = 24;
