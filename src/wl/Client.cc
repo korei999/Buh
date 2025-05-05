@@ -32,7 +32,7 @@ layerSurfaceConfigure(
     ADT_ASSERT(p != nullptr, "p: {}\n", p);
     LOG_WARN("width/height: [{}]\n", Pair {width, height});
 
-    Client::BarOutput& bar = *static_cast<Client::BarOutput*>(p);
+    Client::Bar& bar = *static_cast<Client::Bar*>(p);
     ADT_ASSERT(bar.m_pLayerSurface == zwlr_layer_surface_v1, "");
 
     bar.m_width = width;
@@ -45,13 +45,11 @@ layerSurfaceConfigure(
 }
 
 static void
-layerSurfaceClosed(void* p, zwlr_layer_surface_v1* zwlr_layer_surface_v1)
+layerSurfaceClosed(
+    [[maybe_unused]] void* p,
+    [[maybe_unused]] zwlr_layer_surface_v1* zwlr_layer_surface_v1
+)
 {
-    LOG_BAD("closed\n");
-    ADT_ASSERT(p != nullptr, "p: {}\n", p);
-
-    Client::BarOutput& bar = *static_cast<Client::BarOutput*>(p);
-    // bar.destoryBuffer();
 }
 
 static const wl_registry_listener s_registryListener {
@@ -93,17 +91,17 @@ static const zdwl_ipc_manager_v2_listener s_dwlListener {
 };
 
 static const zdwl_ipc_output_v2_listener s_dwlOutputListener {
-    .toggle_visibility = decltype(zdwl_ipc_output_v2_listener::toggle_visibility)(methodPointer(&Client::BarOutput::toggleVisibility)),
-    .active = decltype(zdwl_ipc_output_v2_listener::active)(methodPointer(&Client::BarOutput::active)),
-    .tag = decltype(zdwl_ipc_output_v2_listener::tag)(methodPointer(&Client::BarOutput::tag)),
-    .layout = decltype(zdwl_ipc_output_v2_listener::layout)(methodPointer(&Client::BarOutput::layout)),
-    .title = decltype(zdwl_ipc_output_v2_listener::title)(methodPointer(&Client::BarOutput::title)),
-    .appid = decltype(zdwl_ipc_output_v2_listener::appid)(methodPointer(&Client::BarOutput::appid)),
-    .layout_symbol = decltype(zdwl_ipc_output_v2_listener::layout_symbol)(methodPointer(&Client::BarOutput::layoutSymbol)),
-    .kblayout = decltype(zdwl_ipc_output_v2_listener::kblayout)(methodPointer(&Client::BarOutput::keyboardLayout)),
-    .frame = decltype(zdwl_ipc_output_v2_listener::frame)(methodPointer(&Client::BarOutput::frame)),
-    .fullscreen = decltype(zdwl_ipc_output_v2_listener::fullscreen)(methodPointer(&Client::BarOutput::fullscreen)),
-    .floating = decltype(zdwl_ipc_output_v2_listener::floating)(methodPointer(&Client::BarOutput::floating)),
+    .toggle_visibility = decltype(zdwl_ipc_output_v2_listener::toggle_visibility)(methodPointer(&Client::Bar::toggleVisibility)),
+    .active = decltype(zdwl_ipc_output_v2_listener::active)(methodPointer(&Client::Bar::active)),
+    .tag = decltype(zdwl_ipc_output_v2_listener::tag)(methodPointer(&Client::Bar::tag)),
+    .layout = decltype(zdwl_ipc_output_v2_listener::layout)(methodPointer(&Client::Bar::layout)),
+    .title = decltype(zdwl_ipc_output_v2_listener::title)(methodPointer(&Client::Bar::title)),
+    .appid = decltype(zdwl_ipc_output_v2_listener::appid)(methodPointer(&Client::Bar::appid)),
+    .layout_symbol = decltype(zdwl_ipc_output_v2_listener::layout_symbol)(methodPointer(&Client::Bar::layoutSymbol)),
+    .kblayout = decltype(zdwl_ipc_output_v2_listener::kblayout)(methodPointer(&Client::Bar::keyboardLayout)),
+    .frame = decltype(zdwl_ipc_output_v2_listener::frame)(methodPointer(&Client::Bar::frame)),
+    .fullscreen = decltype(zdwl_ipc_output_v2_listener::fullscreen)(methodPointer(&Client::Bar::fullscreen)),
+    .floating = decltype(zdwl_ipc_output_v2_listener::floating)(methodPointer(&Client::Bar::floating)),
 };
 
 #if defined __clang__
@@ -253,13 +251,13 @@ Client::registryGlobal(
 
 void
 Client::registryGlobalRemove(
-    wl_registry* wl_registry,
-    u32 name
+    [[maybe_unused]] wl_registry* wl_registry,
+    [[maybe_unused]] u32 name
 )
 {
     for (ssize i = 0; i < m_vBars.size(); ++i)
     {
-        BarOutput& bar = m_vBars[i];
+        Bar& bar = m_vBars[i];
         if (name == bar.m_outputName)
         {
             bar.destroy();
@@ -270,26 +268,26 @@ Client::registryGlobalRemove(
 
 void
 Client::outputGeometry(
-    wl_output* wl_output,
-    i32 x,
-    i32 y,
-    i32 physical_width,
-    i32 physical_height,
-    i32 subpixel,
-    const char* make,
-    const char* model,
-    i32 transform
+    [[maybe_unused]] wl_output* wl_output,
+    [[maybe_unused]] i32 x,
+    [[maybe_unused]] i32 y,
+    [[maybe_unused]] i32 physical_width,
+    [[maybe_unused]] i32 physical_height,
+    [[maybe_unused]] i32 subpixel,
+    [[maybe_unused]] const char* make,
+    [[maybe_unused]] const char* model,
+    [[maybe_unused]] i32 transform
 )
 {
 }
 
 void
 Client::outputMode(
-    wl_output* wl_output,
-    u32 flags,
-    i32 width,
-    i32 height,
-    i32 refresh
+    [[maybe_unused]] wl_output* wl_output,
+    [[maybe_unused]] u32 flags,
+    [[maybe_unused]] i32 width,
+    [[maybe_unused]] i32 height,
+    [[maybe_unused]] i32 refresh
 )
 {
     LOG_NOTIFY(
@@ -299,22 +297,22 @@ Client::outputMode(
 }
 
 void
-Client::outputDone(wl_output* wl_output)
+Client::outputDone([[maybe_unused]] wl_output* wl_output)
 {
 }
 
 void
 Client::outputScale(
-    wl_output* wl_output,
-    i32 factor
+    [[maybe_unused]] wl_output* wl_output,
+    [[maybe_unused]] i32 factor
 )
 {
 }
 
 void
 Client::outputName(
-    wl_output* wl_output,
-    const char* name
+    [[maybe_unused]] wl_output* wl_output,
+    [[maybe_unused]] const char* name
 )
 {
     LOG_NOTIFY("name: '{}'\n", name);
@@ -322,8 +320,8 @@ Client::outputName(
 
 void
 Client::outputDescription(
-    wl_output* wl_output,
-    const char* description
+    [[maybe_unused]] wl_output* wl_output,
+    [[maybe_unused]] const char* description
 )
 {
     LOG_NOTIFY("{}\n", description);
@@ -344,10 +342,27 @@ Client::seatCapabilities(
 
 void
 Client::seatName(
-    wl_seat* wl_seat,
-    const char* name
+    [[maybe_unused]] wl_seat* wl_seat,
+    [[maybe_unused]] const char* name
 )
 {
+}
+
+void
+Client::dwlTags(
+    [[maybe_unused]] zdwl_ipc_manager_v2* zdwl_ipc_manager_v2,
+    [[maybe_unused]] u32 amount
+)
+{
+}
+
+void
+Client::dwlLayout(
+    [[maybe_unused]] zdwl_ipc_manager_v2* zdwl_ipc_manager_v2,
+    [[maybe_unused]] const char* name
+)
+{
+    LOG_BAD("({}), name: '{}'\n", zdwl_ipc_manager_v2, name);
 }
 
 } /* namespace wl */

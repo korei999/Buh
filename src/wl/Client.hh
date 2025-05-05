@@ -12,7 +12,7 @@ namespace wl
 
 struct Client
 {
-    struct BarOutput
+    struct Bar
     {
         Client* m_pClient {};
         wl_output* m_pOutput {};
@@ -43,16 +43,16 @@ struct Client
         void destroy();
 
         void toggleVisibility(zdwl_ipc_output_v2* zdwl_ipc_output_v2);
-        void active(zdwl_ipc_output_v2* zdwl_ipc_output_v2, uint32_t active);
-        void tag(zdwl_ipc_output_v2* zdwl_ipc_output_v2, uint32_t tag, uint32_t state, uint32_t clients, uint32_t focused);
-        void layout(zdwl_ipc_output_v2* zdwl_ipc_output_v2, uint32_t layout); /* tile/monocle etc... */
+        void active(zdwl_ipc_output_v2* zdwl_ipc_output_v2, adt::u32 active);
+        void tag(zdwl_ipc_output_v2* zdwl_ipc_output_v2, adt::u32 tag, adt::u32 state, adt::u32 clients, adt::u32 focused);
+        void layout(zdwl_ipc_output_v2* zdwl_ipc_output_v2, adt::u32 layout); /* tile/monocle etc... */
         void title(zdwl_ipc_output_v2* zdwl_ipc_output_v2, const char* title);
         void appid(zdwl_ipc_output_v2* zdwl_ipc_output_v2, const char* appid);
         void layoutSymbol(zdwl_ipc_output_v2* zdwl_ipc_output_v2, const char* layout);
         void keyboardLayout(zdwl_ipc_output_v2* zdwl_ipc_output_v2, const char* kblayout);
         void frame(zdwl_ipc_output_v2* zdwl_ipc_output_v2);
-        void fullscreen(zdwl_ipc_output_v2* zdwl_ipc_output_v2, uint32_t is_fullscreen);
-        void floating(zdwl_ipc_output_v2* zdwl_ipc_output_v2, uint32_t is_floating);
+        void fullscreen(zdwl_ipc_output_v2* zdwl_ipc_output_v2, adt::u32 is_fullscreen);
+        void floating(zdwl_ipc_output_v2* zdwl_ipc_output_v2, adt::u32 is_floating);
     };
 
     struct Pointer
@@ -86,7 +86,7 @@ struct Client
     wl_registry* m_pRegistry {};
     wl_compositor* m_pCompositor {};
 
-    adt::Vec<BarOutput> m_vBars {};
+    adt::Vec<Bar> m_vBars {};
 
     wl_shm* m_pShm {};
     int m_barHeight {};
@@ -126,14 +126,14 @@ struct Client
     void seatCapabilities(wl_seat* wl_seat, adt::u32 capabilities);
     void seatName(wl_seat* wl_seat, const char* name);
 
-    void pointerEnter(wl_pointer* wl_pointer, uint32_t serial, wl_surface* surface, wl_fixed_t surface_x, wl_fixed_t surface_y);
-    void pointerLeave(wl_pointer* wl_pointer, uint32_t serial, wl_surface* surface);
-    void pointerMotion(wl_pointer* wl_pointer, uint32_t time, wl_fixed_t surface_x, wl_fixed_t surface_y);
-    void pointerButton(wl_pointer* wl_pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state);
-    void pointerAxis(wl_pointer* wl_pointer, uint32_t time, uint32_t axis, wl_fixed_t value);
+    void pointerEnter(wl_pointer* wl_pointer, adt::u32 serial, wl_surface* surface, wl_fixed_t surface_x, wl_fixed_t surface_y);
+    void pointerLeave(wl_pointer* wl_pointer, adt::u32 serial, wl_surface* surface);
+    void pointerMotion(wl_pointer* wl_pointer, adt::u32 time, wl_fixed_t surface_x, wl_fixed_t surface_y);
+    void pointerButton(wl_pointer* wl_pointer, adt::u32 serial, adt::u32 time, adt::u32 button, adt::u32 state);
+    void pointerAxis(wl_pointer* wl_pointer, adt::u32 time, adt::u32 axis, wl_fixed_t value);
 	void pointerFrame(wl_pointer *wl_pointer);
 
-    void dwlTags(zdwl_ipc_manager_v2* zdwl_ipc_manager_v2, uint32_t amount);
+    void dwlTags(zdwl_ipc_manager_v2* zdwl_ipc_manager_v2, adt::u32 amount);
     void dwlLayout(zdwl_ipc_manager_v2* zdwl_ipc_manager_v2, const char* name);
 };
 

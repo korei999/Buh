@@ -3,17 +3,20 @@
 #include "frame.hh"
 
 #include "adt/logs.hh"
+#include "adt/StdAllocator.hh"
+
+using namespace adt;
 
 namespace wl
 {
 
 void
 Client::pointerEnter(
-    wl_pointer* wl_pointer,
-    uint32_t serial,
-    wl_surface* surface,
-    wl_fixed_t surface_x,
-    wl_fixed_t surface_y
+    [[maybe_unused]] wl_pointer* wl_pointer,
+    [[maybe_unused]] u32 serial,
+    [[maybe_unused]] wl_surface* surface,
+    [[maybe_unused]] wl_fixed_t surface_x,
+    [[maybe_unused]] wl_fixed_t surface_y
 )
 {
     m_pointer.pLastEnterSufrace = surface;
@@ -21,9 +24,9 @@ Client::pointerEnter(
 
 void
 Client::pointerLeave(
-    wl_pointer* wl_pointer,
-    uint32_t serial,
-    wl_surface* surface
+    [[maybe_unused]] wl_pointer* wl_pointer,
+    [[maybe_unused]] u32 serial,
+    [[maybe_unused]] wl_surface* surface
 )
 {
     m_pointer.pLastEnterSufrace = nullptr;
@@ -31,10 +34,10 @@ Client::pointerLeave(
 
 void
 Client::pointerMotion(
-    wl_pointer* wl_pointer,
-    uint32_t time,
-    wl_fixed_t surface_x,
-    wl_fixed_t surface_y
+    [[maybe_unused]] wl_pointer* wl_pointer,
+    [[maybe_unused]] u32 time,
+    [[maybe_unused]] wl_fixed_t surface_x,
+    [[maybe_unused]] wl_fixed_t surface_y
 )
 {
     m_pointer.surfacePointerX = wl_fixed_to_double(surface_x);
@@ -44,11 +47,11 @@ Client::pointerMotion(
 
 void
 Client::pointerButton(
-    wl_pointer* wl_pointer,
-    uint32_t serial,
-    uint32_t time,
-    uint32_t button,
-    uint32_t state
+    [[maybe_unused]] wl_pointer* wl_pointer,
+    [[maybe_unused]] u32 serial,
+    [[maybe_unused]] u32 time,
+    [[maybe_unused]] u32 button,
+    [[maybe_unused]] u32 state
 )
 {
     m_pointer.time = time;
@@ -62,35 +65,17 @@ Client::pointerButton(
 
 void
 Client::pointerAxis(
-    wl_pointer* wl_pointer,
-    uint32_t time,
-    uint32_t axis,
-    wl_fixed_t value
+    [[maybe_unused]] wl_pointer* wl_pointer,
+    [[maybe_unused]] u32 time,
+    [[maybe_unused]] u32 axis,
+    [[maybe_unused]] wl_fixed_t value
 )
 {
 }
 
 void
-Client::pointerFrame(wl_pointer *wl_pointer)
+Client::pointerFrame([[maybe_unused]] wl_pointer *wl_pointer)
 {
-}
-
-void
-Client::dwlTags(
-    zdwl_ipc_manager_v2* zdwl_ipc_manager_v2,
-    uint32_t amount
-)
-{
-    LOG_BAD("({}), amount: '{}'\n", zdwl_ipc_manager_v2, amount);
-}
-
-void
-Client::dwlLayout(
-    zdwl_ipc_manager_v2* zdwl_ipc_manager_v2,
-    const char* name
-)
-{
-    LOG_BAD("({}), name: '{}'\n", zdwl_ipc_manager_v2, name);
 }
 
 } /* namespace wl */

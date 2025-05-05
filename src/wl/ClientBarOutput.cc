@@ -12,7 +12,7 @@ namespace wl
 {
 
 void
-Client::BarOutput::allocShmBuffer()
+Client::Bar::allocShmBuffer()
 {
     const int stride = m_width * 4;
     const int shmPoolSize = (m_pClient->m_barHeight * stride);
@@ -35,7 +35,7 @@ Client::BarOutput::allocShmBuffer()
 }
 
 void
-Client::BarOutput::destroy()
+Client::Bar::destroy()
 {
     wl_shm_pool_destroy(m_pShmPool);
     munmap(m_pPoolData, m_poolSize);
@@ -47,22 +47,25 @@ Client::BarOutput::destroy()
 }
 
 void
-Client::BarOutput::toggleVisibility(zdwl_ipc_output_v2* zdwl_ipc_output_v2)
+Client::Bar::toggleVisibility([[maybe_unused]] zdwl_ipc_output_v2* zdwl_ipc_output_v2)
 {
 }
 
 void
-Client::BarOutput::active(zdwl_ipc_output_v2* zdwl_ipc_output_v2, uint32_t active)
+Client::Bar::active(
+    [[maybe_unused]] zdwl_ipc_output_v2* zdwl_ipc_output_v2,
+    [[maybe_unused]] u32 active
+)
 {
 }
 
 void
-Client::BarOutput::tag(
-    zdwl_ipc_output_v2* zdwl_ipc_output_v2,
-    uint32_t tag,
-    uint32_t state,
-    uint32_t clients,
-    uint32_t focused
+Client::Bar::tag(
+    [[maybe_unused]] zdwl_ipc_output_v2* zdwl_ipc_output_v2,
+    [[maybe_unused]] u32 tag,
+    [[maybe_unused]] u32 state,
+    [[maybe_unused]] u32 clients,
+    [[maybe_unused]] u32 focused
 )
 {
     if (tag >= m_vTags.size())
@@ -76,47 +79,68 @@ Client::BarOutput::tag(
 }
 
 void
-Client::BarOutput::layout(zdwl_ipc_output_v2* zdwl_ipc_output_v2, uint32_t layout)
+Client::Bar::layout(
+    [[maybe_unused]] zdwl_ipc_output_v2* zdwl_ipc_output_v2,
+    [[maybe_unused]] u32 layout
+)
 {
 }
 
 void
-Client::BarOutput::title(zdwl_ipc_output_v2* zdwl_ipc_output_v2, const char* title)
+Client::Bar::title(
+    [[maybe_unused]] zdwl_ipc_output_v2* zdwl_ipc_output_v2,
+    [[maybe_unused]] const char* title
+)
 {
     m_sfTitle = title;
 }
 
 void
-Client::BarOutput::appid(zdwl_ipc_output_v2* zdwl_ipc_output_v2, const char* appid)
+Client::Bar::appid(
+    [[maybe_unused]] zdwl_ipc_output_v2* zdwl_ipc_output_v2,
+    [[maybe_unused]] const char* appid
+)
 {
     m_sfAppid = appid;
 }
 
 void
-Client::BarOutput::layoutSymbol(zdwl_ipc_output_v2* zdwl_ipc_output_v2, const char* layout)
+Client::Bar::layoutSymbol(
+    [[maybe_unused]] zdwl_ipc_output_v2* zdwl_ipc_output_v2,
+    [[maybe_unused]] const char* layout
+)
 {
     m_sfLayoutIcon = layout;
 }
 
 void
-Client::BarOutput::keyboardLayout(zdwl_ipc_output_v2* zdwl_ipc_output_v2, const char* kblayout)
+Client::Bar::keyboardLayout(
+    [[maybe_unused]] zdwl_ipc_output_v2* zdwl_ipc_output_v2,
+    [[maybe_unused]] const char* kblayout
+)
 {
     m_sfKbLayout = kblayout;
 }
 
 void
-Client::BarOutput::frame(zdwl_ipc_output_v2* zdwl_ipc_output_v2)
+Client::Bar::frame([[maybe_unused]] zdwl_ipc_output_v2* zdwl_ipc_output_v2)
 {
     frame::g_bRedraw = true;
 }
 
 void
-Client::BarOutput::fullscreen(zdwl_ipc_output_v2* zdwl_ipc_output_v2, uint32_t is_fullscreen)
+Client::Bar::fullscreen(
+    [[maybe_unused]] zdwl_ipc_output_v2* zdwl_ipc_output_v2,
+    [[maybe_unused]] u32 is_fullscreen
+)
 {
 }
 
 void
-Client::BarOutput::floating(zdwl_ipc_output_v2* zdwl_ipc_output_v2, uint32_t is_floating)
+Client::Bar::floating(
+    [[maybe_unused]] zdwl_ipc_output_v2* zdwl_ipc_output_v2,
+    [[maybe_unused]] u32 is_floating
+)
 {
 }
 
