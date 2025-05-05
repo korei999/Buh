@@ -59,10 +59,6 @@ static const wl_registry_listener s_registryListener {
     .global_remove = decltype(wl_registry_listener::global_remove)(methodPointer(&Client::registryGlobalRemove)),
 };
 
-static const wl_shm_listener s_shmListener {
-    .format = decltype(wl_shm_listener::format)(methodPointer(&Client::shmFormat))
-};
-
 static const wl_output_listener s_outputListener {
     .geometry = decltype(wl_output_listener::geometry)(methodPointer(&Client::outputGeometry)),
     .mode = decltype(wl_output_listener::mode)(methodPointer(&Client::outputMode)),
@@ -89,15 +85,6 @@ static const wl_pointer_listener s_pointerListener {
     .button = decltype(wl_pointer_listener::button)(methodPointer(&Client::pointerButton)),
     .axis = decltype(wl_pointer_listener::axis)(methodPointer(&Client::pointerAxis)),
     .frame = decltype(wl_pointer_listener::frame)(methodPointer(&Client::pointerFrame)),
-};
-
-static const wl_keyboard_listener s_keyboardListener {
-    .keymap = decltype(wl_keyboard_listener::keymap)(methodPointer(&Client::keyboardKeymap)),
-    .enter = decltype(wl_keyboard_listener::enter)(methodPointer(&Client::keyboardEnter)),
-    .leave = decltype(wl_keyboard_listener::leave)(methodPointer(&Client::keyboardLeave)),
-    .key = decltype(wl_keyboard_listener::key)(methodPointer(&Client::keyboardKey)),
-    .modifiers = decltype(wl_keyboard_listener::modifiers)(methodPointer(&Client::keyboardModifiers)),
-    .repeat_info = decltype(wl_keyboard_listener::repeat_info)(methodPointer(&Client::keyboardRepeatInfo)),
 };
 
 static const zdwl_ipc_manager_v2_listener s_dwlListener {
@@ -135,41 +122,6 @@ Client::Client(const char* ntsName, const int height)
 
     wl_registry_add_listener(m_pRegistry, &s_registryListener, this);
     wl_display_roundtrip(m_pDisplay);
-
-    wl_shm_add_listener(m_pShm, &s_shmListener, this);
-
-    // for (auto& bar : m_vOutputBars)
-    // {
-    //     bar.m_pClient = this;
-    //
-    //     bar.m_pLayerSurface = zwlr_layer_shell_v1_get_layer_surface(
-    //         m_pLayerShell,
-    //         bar.m_pSurface,
-    //         bar.m_pOutput,
-    //         ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM,
-    //         ntsName
-    //     );
-    //
-    //     zwlr_layer_surface_v1_add_listener(bar.m_pLayerSurface, &s_layerSurfaceListener, &bar);
-    //     zwlr_layer_surface_v1_set_size(bar.m_pLayerSurface, 0, m_barHeight);
-    //     zwlr_layer_surface_v1_set_anchor(bar.m_pLayerSurface,
-    //         ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP |
-    //         ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT |
-    //         ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT
-    //     );
-    //     zwlr_layer_surface_v1_set_exclusive_zone(bar.m_pLayerSurface, m_barHeight);
-    //
-    //     ADT_ASSERT_ALWAYS(
-    //         bar.m_pDwlOutput = zdwl_ipc_manager_v2_get_output(m_pDwlManager, bar.m_pOutput),
-    //         "Failed to get dwl output"
-    //     );
-    //
-    //     zdwl_ipc_output_v2_add_listener(bar.m_pDwlOutput, &s_dwlOutputListener, &bar);
-    //
-    //     wl_surface_commit(bar.m_pSurface);
-    // }
-
-    wl_display_dispatch(m_pDisplay);
 }
 
 void
@@ -270,6 +222,7 @@ Client::registryGlobal(
             zdwl_ipc_output_v2_add_listener(bar.m_pDwlOutput, &s_dwlOutputListener, &bar);
 
             wl_surface_commit(bar.m_pSurface);
+            wl_display_dispatch(m_pDisplay);
         }
 
         wl_output_add_listener(p, &s_outputListener, this);
@@ -313,14 +266,6 @@ Client::registryGlobalRemove(
             m_vBars.popAsLast(i);
         }
     }
-}
-
-void
-Client::shmFormat(
-    wl_shm *wl_shm,
-    u32 format
-)
-{
 }
 
 void
@@ -394,12 +339,6 @@ Client::seatCapabilities(
     {
         m_pPointer = wl_seat_get_pointer(wl_seat);
         wl_pointer_add_listener(m_pPointer, &s_pointerListener, this);
-    }
-
-    if (capabilities & WL_SEAT_CAPABILITY_KEYBOARD)
-    {
-        m_pKeyboard = wl_seat_get_keyboard(wl_seat);
-        wl_keyboard_add_listener(m_pKeyboard, &s_keyboardListener, this);
     }
 }
 

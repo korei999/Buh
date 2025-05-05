@@ -76,67 +76,6 @@ Client::pointerFrame(wl_pointer *wl_pointer)
 }
 
 void
-Client::keyboardKeymap(
-    wl_keyboard* wl_keyboard,
-    uint32_t format,
-    int32_t fd,
-    uint32_t size
-)
-{
-}
-
-void
-Client::keyboardEnter(
-    wl_keyboard* wl_keyboard,
-    uint32_t serial,
-    wl_surface* surface,
-    wl_array* keys
-)
-{
-}
-
-void
-Client::keyboardLeave(
-    wl_keyboard* wl_keyboard,
-    uint32_t serial,
-    wl_surface* surface
-)
-{
-}
-
-void
-Client::keyboardKey(
-    wl_keyboard* wl_keyboard,
-    uint32_t serial,
-    uint32_t time,
-    uint32_t key,
-    uint32_t state
-)
-{
-}
-
-void
-Client::keyboardModifiers(
-    wl_keyboard* wl_keyboard,
-    uint32_t serial,
-    uint32_t mods_depressed,
-    uint32_t mods_latched,
-    uint32_t mods_locked,
-    uint32_t group
-)
-{
-}
-
-void
-Client::keyboardRepeatInfo(
-    wl_keyboard* wl_keyboard,
-    int32_t rate,
-    int32_t delay
-)
-{
-}
-
-void
 Client::dwlTags(
     zdwl_ipc_manager_v2* zdwl_ipc_manager_v2,
     uint32_t amount

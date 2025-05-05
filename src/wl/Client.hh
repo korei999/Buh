@@ -93,7 +93,6 @@ struct Client
 
     wl_seat* m_pSeat {};
     wl_pointer* m_pPointer {};
-    wl_keyboard* m_pKeyboard {};
 
     zwlr_layer_shell_v1* m_pLayerShell {};
     zwlr_layer_surface_v1* m_pLayerSurface {};
@@ -114,8 +113,6 @@ struct Client
     void registryGlobal(wl_registry* wl_registry, adt::u32 name, const char* interface, adt::u32 version);
     void registryGlobalRemove(wl_registry* wl_registry, adt::u32 name);
 
-	void shmFormat(wl_shm *wl_shm, adt::u32 format);
-
     void outputGeometry(
         wl_output* wl_output, adt::i32 x, adt::i32 y, adt::i32 physical_width, adt::i32 physical_height,
         adt::i32 subpixel, const char* make, const char* model, adt::i32 transform
@@ -135,13 +132,6 @@ struct Client
     void pointerButton(wl_pointer* wl_pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state);
     void pointerAxis(wl_pointer* wl_pointer, uint32_t time, uint32_t axis, wl_fixed_t value);
 	void pointerFrame(wl_pointer *wl_pointer);
-
-    void keyboardKeymap(wl_keyboard* wl_keyboard, uint32_t format, int32_t fd, uint32_t size);
-    void keyboardEnter(wl_keyboard* wl_keyboard, uint32_t serial, wl_surface* surface, wl_array* keys);
-    void keyboardLeave(wl_keyboard* wl_keyboard, uint32_t serial, wl_surface* surface);
-    void keyboardKey(wl_keyboard* wl_keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state);
-    void keyboardModifiers(wl_keyboard* wl_keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group);
-    void keyboardRepeatInfo(wl_keyboard* wl_keyboard, int32_t rate, int32_t delay);
 
     void dwlTags(zdwl_ipc_manager_v2* zdwl_ipc_manager_v2, uint32_t amount);
     void dwlLayout(zdwl_ipc_manager_v2* zdwl_ipc_manager_v2, const char* name);
