@@ -5,7 +5,6 @@
 
 #include "adt/logs.hh"
 #include "adt/file.hh"
-#include "adt/math.hh"
 #include "adt/simd.hh"
 
 #include <poll.h>
@@ -88,8 +87,8 @@ run()
                             const auto [u, v] = mRes.value();
     
                             const Span2D<u8> spAtlas = rast.atlasSpan();
-    
                             const int maxx = utils::min(bar.m_width, maxAbsX);
+
                             for (int y = 0; y < scale; ++y)
                             {
                                 for (int x = 0; x < xScale; ++x)
@@ -100,16 +99,21 @@ run()
                                     const u8 val = spAtlas(x + u, y + v);
                                     if (val == 0) continue;
 
-                                    auto& rDest = (ImagePixelARGBle&)spBuffer(x + xOffset + thisXOff, bar.m_height - 1 - y - yOff);
+                                    auto& rDest = (ImagePixelARGBle&)spBuffer(
+                                        x + xOffset + thisXOff,
+                                        bar.m_height - 1 - y - yOff
+                                    );
+
+                                    if (val == 255) rDest.data = color;
 
                                     /* lerp */
-                                    const f32 a = val / 255.0f;
-                                    const f32 ia = 1.0f - a;
+                                    const f32 t = val / 255.0f;
+                                    const f32 oneMinusT = 1.0f - t;
 
                                     rDest.a = 0xff;
-                                    rDest.r = (u8)(penR * a + rDest.r * ia);
-                                    rDest.g = (u8)(penG * a + rDest.g * ia);
-                                    rDest.b = (u8)(penB * a + rDest.b * ia);
+                                    rDest.r = (u8)(oneMinusT * rDest.r + t * penR);
+                                    rDest.g = (u8)(oneMinusT * rDest.g + t * penG);
+                                    rDest.b = (u8)(oneMinusT * rDest.b + t * penB);
                                 }
                             }
                         }
