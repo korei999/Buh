@@ -259,6 +259,11 @@ Rasterizer::rasterizeGlyph(const Font& font, const Glyph& glyph, int xOff, int y
                 if (startIdx != endIdx)
                     spAtlas(xOff + endIdx, yOff + row) = 255.0f * endCovered;
 
+                // if (startIdx >= 0)
+                //     spAtlas(xOff + startIdx, yOff + row) = utils::clamp(255.0f * startCovered, 0.0f, 255.0f);
+                // if (startIdx != endIdx)
+                //     spAtlas(xOff + endIdx, yOff + row) = utils::clamp(255.0f * endCovered, 0.0f, 255.0f);
+
                 for (int col = startIdx + 1; col < endIdx; ++col)
                     if (col >= 0) spAtlas(xOff + col, yOff + row) = 255;
             }

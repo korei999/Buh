@@ -37,6 +37,7 @@ Image::cloneToRGBA(adt::IAllocator* pAlloc)
         }
         break;
 
+        case Image::TYPE::ARGB_LE:
         case Image::TYPE::RGBA:
         {
             utils::memCopy(nImg.m_uData.pRGBA, m_uData.pRGBA, m_width * m_height);
@@ -70,6 +71,10 @@ Image::swapRedBlue()
 
     switch (m_eType)
     {
+        case Image::TYPE::ARGB_LE:
+        ADT_ASSERT_ALWAYS(false, "unimplemented");
+        break;
+
         case Image::TYPE::RGBA:
         {
             const ssize size = m_width * m_height;
@@ -130,6 +135,7 @@ Image::flipVertically(adt::IAllocator* pAlloc)
 {
     switch (m_eType)
     {
+        case Image::TYPE::ARGB_LE:
         case Image::TYPE::RGBA:
         {
             auto* pTemp = pAlloc->mallocV<ImagePixelRGBA>(m_width * m_height);

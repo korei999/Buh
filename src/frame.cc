@@ -5,6 +5,7 @@
 
 #include "adt/logs.hh"
 #include "adt/file.hh"
+#include "adt/math.hh"
 #include "adt/simd.hh"
 
 #include <poll.h>
@@ -70,6 +71,11 @@ run()
                         ) -> int
                     {
                         int thisXOff = 0;
+
+                        const u8 penR = (color >> 16) & 0xff;
+                        const u8 penG = (color >> 8) & 0xff;
+                        const u8 penB = (color >> 0) & 0xff;
+
                         for (const wchar_t ch : StringGlyphIt(sv))
                         {
                             defer( thisXOff += xScale );
@@ -79,9 +85,9 @@ run()
                             MapResult mRes = rast.searchGlyph(ch);
                             if (mRes.eStatus == MAP_RESULT_STATUS::NOT_FOUND) continue;
     
-                            Pair<i16, i16> uv = mRes.value();
+                            const auto [u, v] = mRes.value();
     
-                            const Span2D<u8> spAtlas = rast.m_altas.spanMono();
+                            const Span2D<u8> spAtlas = rast.atlasSpan();
     
                             const int maxx = utils::min(bar.m_width, maxAbsX);
                             for (int y = 0; y < scale; ++y)
@@ -91,14 +97,19 @@ run()
                                     const int off = x + xOffset + thisXOff;
                                     if (off >= maxx) goto GOTO_done;
 
-                                    const u8 val = spAtlas(x + uv.first, y + uv.second);
-                                    if (val > 0)
-                                    {
-                                        spBuffer(
-                                            x + xOffset + thisXOff,
-                                            bar.m_height - 1 - y - yOff
-                                        ) = color;
-                                    }
+                                    const u8 val = spAtlas(x + u, y + v);
+                                    if (val == 0) continue;
+
+                                    auto& rDest = (ImagePixelARGBle&)spBuffer(x + xOffset + thisXOff, bar.m_height - 1 - y - yOff);
+
+                                    /* lerp */
+                                    const f32 a = val / 255.0f;
+                                    const f32 ia = 1.0f - a;
+
+                                    rDest.a = 0xff;
+                                    rDest.r = (u8)(penR * a + rDest.r * ia);
+                                    rDest.g = (u8)(penG * a + rDest.g * ia);
+                                    rDest.b = (u8)(penB * a + rDest.b * ia);
                                 }
                             }
                         }

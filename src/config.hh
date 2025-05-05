@@ -30,10 +30,10 @@ struct StatusEntry
     /* */
 
     static StatusEntry
-    makeText(const char* _ntsText)
+    makeText(const char* ntsText)
     {
         return {
-            .nts = _ntsText,
+            .nts = ntsText,
             .updateRateMS = -1.0,
             .eType = TYPE::TEXT,
         };
@@ -52,11 +52,7 @@ struct StatusEntry
     static StatusEntry
     makeKeyboardLayout()
     {
-        return {
-            .nts {},
-            .updateRateMS = -1.0,
-            .eType = TYPE::KEYBOARD_LAYOUT
-        };
+        return {.eType = TYPE::KEYBOARD_LAYOUT };
     }
 
     static StatusEntry
