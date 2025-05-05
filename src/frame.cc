@@ -50,13 +50,20 @@ run()
             defer( g_bRedraw = false );
 
             const f64 currTime = utils::timeNowMS();
+#ifndef NDEBUG
+            defer( COUT("drew in: {} ms\n", utils::timeNowMS() - currTime) );
+#endif
 
             for (auto& bar : app::client().m_vBars)
             {
                 u32* p = reinterpret_cast<u32*>(bar.m_pPoolData);
                 Span2D<u32> spBuffer {p, bar.m_width, bar.m_height, bar.m_width};
     
+#ifdef ADT_AVX2
+                simd::i32Fillx8({reinterpret_cast<i32*>(p), bar.m_width * bar.m_height}, 0xff777777);
+#else
                 simd::i32Fillx4({reinterpret_cast<i32*>(p), bar.m_width * bar.m_height}, 0xff777777);
+#endif
     
                 {
                     int xOff = 0;
@@ -87,14 +94,16 @@ run()
                             const auto [u, v] = mRes.value();
     
                             const Span2D<u8> spAtlas = rast.atlasSpan();
-                            const int maxx = utils::min(bar.m_width, maxAbsX);
+                            int maxx = utils::min(bar.m_width, maxAbsX);
 
                             for (int y = 0; y < scale; ++y)
                             {
                                 for (int x = 0; x < xScale; ++x)
                                 {
-                                    const int off = x + xOffset + thisXOff;
-                                    if (off >= maxx) goto GOTO_done;
+                                    {
+                                        const int off = x + xOffset + thisXOff;
+                                        if (off >= maxx) goto GOTO_done;
+                                    }
 
                                     const u8 val = spAtlas(x + u, y + v);
                                     if (val == 0) continue;
@@ -206,15 +215,38 @@ GOTO_done:
                         char aBuff[4] {};
                         const ssize n = print::toSpan(aBuff, "{}", 1 + tagI);
                         const int tagXBegin = xOff;
-    
+
+                        if (tag.eState == ZDWL_IPC_OUTPUT_V2_TAG_STATE_URGENT)
+                        {
+                            const int numberLen = (n*xScale) + xScale/2 + xScale;
+                            for (int y = 0; y < scale; ++y)
+                            {
+                                for (int x = 0; x < numberLen; ++x)
+                                {
+                                    spBuffer(
+                                        x + xOff,
+                                        bar.m_height - 1 - y - yOff
+                                    ) = 0xffac4242;
+                                }
+                            }
+                        }
+
                         const u32 color = [&]
                         {
-                            if (tag.eState == ZDWL_IPC_OUTPUT_V2_TAG_STATE_ACTIVE)
+                            if (tag.eState == ZDWL_IPC_OUTPUT_V2_TAG_STATE_ACTIVE ||
+                                tag.eState == ZDWL_IPC_OUTPUT_V2_TAG_STATE_URGENT
+                            )
+                            {
                                 return 0xff000000U;
-                            else return 0xff555555U;
+                            }
+                            else
+                            {
+                                return 0xff555555U;
+                            }
                         }();
     
                         xOff += xScale / 4;
+
                         if (tag.nClients > 0)
                         {
                             /* draw lil something */

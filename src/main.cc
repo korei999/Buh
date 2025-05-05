@@ -3,12 +3,14 @@
 
 #include "adt/defer.hh"
 #include "adt/StdAllocator.hh"
+#include "adt/file.hh"
 
 #include "font.bin"
 
 using namespace adt;
 
 static int s_barHeight = 24;
+static const char* s_ntsFontPath {};
 
 static void
 parseArgs(const int argc, const char* const* argv)
@@ -33,6 +35,19 @@ parseArgs(const int argc, const char* const* argv)
                     s_barHeight = num;
                 }
             }
+            else if (sv == "--font")
+            {
+                if (i + 1 < argc)
+                {
+                    ++i;
+                    s_ntsFontPath = argv[i];
+                }
+                else
+                {
+                    print::err("failed to parse font arg\n");
+                    exit(1);
+                }
+            }
         }
         else return;
     }
@@ -51,16 +66,41 @@ main(const int argc, const char* const* argv)
         utils::max(ADT_GET_NPROCS() - 1, 2)
     };
 
-    app::g_threadPool.start();
+    // app::g_threadPool.start();
     defer( app::g_threadPool.destroy(StdAllocator::inst()) );
 
     app::allocScratchForThisThread(SIZE_1M);
     defer( app::destroyScratchForThisThread() );
 
-    if (!bool(app::g_font = ttf::Font {StdAllocator::inst(), StringView {(char*)LiberationMono_Regular_ttf, LiberationMono_Regular_ttf_len}}))
+    String sFile {};
+    defer( sFile.destroy(StdAllocator::inst()) );
+    if (!s_ntsFontPath)
     {
-        print::err("failed to parse the font\n");
-        return 1;
+        new(&app::g_font) ttf::Font {StdAllocator::inst(), StringView {
+            (char*)LiberationMono_Regular_ttf, LiberationMono_Regular_ttf_len
+        }};
+
+        if (!app::g_font)
+        {
+            print::err("failed to parse the font\n");
+            return 1;
+        }
+    }
+    else
+    {
+        sFile = file::load(StdAllocator::inst(), s_ntsFontPath);
+        if (!sFile)
+        {
+            print::err("failed to load file '{}'\n", s_ntsFontPath);
+            return 1;
+        }
+
+        new(&app::g_font) ttf::Font {StdAllocator::inst(), sFile};
+        if (!app::g_font)
+        {
+            print::err("failed to parse the font\n");
+            return 1;
+        }
     }
 
     app::g_rasterizer.rasterizeAscii(StdAllocator::inst(), &app::g_font, s_barHeight);

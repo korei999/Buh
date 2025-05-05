@@ -58,8 +58,6 @@ struct ThreadPool
 
     /* */
 
-    void start(); /* explicit start function to avoid copy constructor with running threads problems */
-
     void wait();
 
     void destroy(IAllocator* pAlloc);
@@ -81,6 +79,7 @@ struct ThreadPool
     [[deprecated("rvalue lambdas cause use after free")]] void addLambdaRetry(LAMBDA&& t) = delete;
 
 protected:
+    void start();
     THREAD_STATUS loop();
 };
 
@@ -93,6 +92,7 @@ ThreadPool<QUEUE_SIZE>::ThreadPool(IAllocator* pAlloc, int nThreads)
       m_cndWait(INIT),
       m_atomBDone(false)
 {
+    start();
 }
 
 template<ssize QUEUE_SIZE>
@@ -113,6 +113,7 @@ ThreadPool<QUEUE_SIZE>::ThreadPool(
       m_pLoopEndArg(pLoopEndArg),
       m_atomBDone(false)
 {
+    start();
 }
 
 template<ssize QUEUE_SIZE>

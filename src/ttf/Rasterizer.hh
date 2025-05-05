@@ -13,7 +13,7 @@ struct Font;
 
 struct Rasterizer
 {
-    static constexpr adt::f32 X_STEP = 0.55f; /* x-axis spacing between glyphs */
+    static constexpr adt::f32 X_STEP = 0.50f; /* x-axis spacing between glyphs */
 
     /* */
 

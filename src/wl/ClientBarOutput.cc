@@ -15,7 +15,7 @@ namespace wl
 void
 Client::Bar::allocShmBuffer()
 {
-    const int stride = m_width * 4;
+    const int stride = m_width*4 + 7; /* simd padding */
     const int shmPoolSize = (m_pClient->m_barHeight * stride);
 
     const int fd = shm::allocFile(shmPoolSize);
