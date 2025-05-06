@@ -5,8 +5,6 @@
 
 #include "Tag.hh"
 
-#include "adt/Vec.hh"
-
 namespace wayland
 {
 

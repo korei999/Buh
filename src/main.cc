@@ -1,10 +1,6 @@
 #include "app.hh"
 #include "frame.hh"
 
-#include "adt/defer.hh"
-#include "adt/StdAllocator.hh"
-#include "adt/file.hh"
-
 #include "font.bin"
 
 using namespace adt;

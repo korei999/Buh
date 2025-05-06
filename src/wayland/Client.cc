@@ -1,10 +1,5 @@
 #include "Client.hh"
 
-#include "adt/assert.hh"
-#include "adt/logs.hh"
-#include "adt/StdAllocator.hh"
-#include "adt/Pair.hh"
-
 using namespace adt;
 
 namespace wayland

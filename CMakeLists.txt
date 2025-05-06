@@ -34,7 +34,7 @@ option(OPT_MIMALLOC "" OFF)
 option(OPT_SW "" OFF)
 option(OPT_GL "" ON)
 option(OPT_FAST_MATH "" OFF)
-option(OPT_PRECOMPILE_ADT "" OFF)
+option(OPT_PRECOMPILE_ADT "" ON)
 option(OPT_ANALYZE "" OFF)
 
 if (OPT_ANALYZE)

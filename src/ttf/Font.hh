@@ -2,8 +2,6 @@
 
 #include "types.hh"
 
-#include "adt/bin.hh"
-
 namespace ttf
 {
 

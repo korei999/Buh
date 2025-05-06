@@ -1,7 +1,5 @@
 #include "app.hh"
 
-#include "adt/StdAllocator.hh"
-
 using namespace adt;
 
 namespace app

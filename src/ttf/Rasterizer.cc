@@ -3,11 +3,6 @@
 #include "Font.hh"
 #include "app.hh"
 
-#include "adt/BufferAllocator.hh"
-#include "adt/logs.hh"
-#include "adt/Array.hh"
-#include "adt/math.hh"
-
 using namespace adt;
 
 namespace ttf

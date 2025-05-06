@@ -1,9 +1,5 @@
 #pragma once
 
-#include "adt/IAllocator.hh"
-#include "adt/Span2D.hh"
-#include "adt/types.hh"
-
 union ImagePixelRGBA
 {
     struct { adt::u8 r, g, b, a; };

@@ -1,9 +1,5 @@
 #pragma once
 
-#include "adt/Map.hh"
-#include "adt/String.hh"
-#include "adt/Vec.hh"
-
 namespace ttf
 {
 

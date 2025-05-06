@@ -3,10 +3,6 @@
 #include "frame.hh"
 #include "shm.hh"
 
-#include "adt/StdAllocator.hh"
-#include "adt/defer.hh"
-#include "adt/logs.hh"
-
 using namespace adt;
 
 namespace wayland

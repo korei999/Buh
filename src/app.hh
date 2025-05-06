@@ -4,9 +4,6 @@
 #include "ttf/Rasterizer.hh"
 #include "wayland/Client.hh"
 
-#include "adt/ScratchBuffer.hh"
-#include "adt/ThreadPool.hh"
-
 namespace app
 {
 
