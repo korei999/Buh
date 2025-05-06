@@ -6,7 +6,7 @@
 #include <time.h>
 #include <unistd.h>
 
-namespace wl::shm
+namespace wayland::shm
 {
 
 inline void

@@ -106,7 +106,7 @@ main(const int argc, const char* const* argv)
     app::g_rasterizer.rasterizeAscii(StdAllocator::inst(), &app::g_font, s_barHeight);
     defer( app::g_rasterizer.destroy(StdAllocator::inst()) );
 
-    new(&app::g_client) wl::Client {"Buh", s_barHeight};
+    new(&app::g_client) wayland::Client {"Buh", s_barHeight};
     defer( app::g_client.destroy() );
 
     app::g_bRunning = true;

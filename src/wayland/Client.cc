@@ -7,7 +7,7 @@
 
 using namespace adt;
 
-namespace wl
+namespace wayland
 {
 
 #if defined __clang__
@@ -385,4 +385,4 @@ Client::dwlLayout(
     LOG_BAD("({}), name: '{}'\n", zdwl_ipc_manager_v2, name);
 }
 
-} /* namespace wl */
+} /* namespace wayland */

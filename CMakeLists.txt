@@ -211,9 +211,9 @@ add_executable(
     src/frame.cc
     src/Image.cc
 
-    src/wl/Client.cc
-    src/wl/ClientInput.cc
-    src/wl/ClientBarOutput.cc
+    src/wayland/Client.cc
+    src/wayland/ClientInput.cc
+    src/wayland/ClientBarOutput.cc
 
     src/ttf/Font.cc
     src/ttf/Rasterizer.cc
@@ -246,7 +246,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
         ${WAYLAND_CLIENT_LIBRARIES} 
     )
 
-    set(WLP "./src/wl")
+    set(WLP "./src/wayland")
     set(WLPD "${WLP}/WaylandGlueGenerated")
     execute_process(
         COMMAND pkg-config wayland-protocols --variable=pkgdatadir

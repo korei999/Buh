@@ -7,7 +7,7 @@
 
 #include "adt/Vec.hh"
 
-namespace wl
+namespace wayland
 {
 
 struct Client
@@ -141,4 +141,4 @@ struct Client
     void dwlLayout(zdwl_ipc_manager_v2* zdwl_ipc_manager_v2, const char* name);
 };
 
-} /* namespace wl */
+} /* namespace wayland */

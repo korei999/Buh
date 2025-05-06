@@ -253,7 +253,7 @@ run()
     
                         const int px = app::g_client.m_pointer.surfacePointerX;
                         if (px >= tagXBegin && px < tagXEnd &&
-                            app::g_client.m_pointer.eButton == wl::Client::Pointer::BUTTON::LEFT
+                            app::g_client.m_pointer.eButton == wayland::Client::Pointer::BUTTON::LEFT
                         )
                         {
                             if (app::g_client.m_pointer.pLastEnterSufrace == bar.m_pSurface)

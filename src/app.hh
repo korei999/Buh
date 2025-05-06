@@ -2,7 +2,7 @@
 
 #include "ttf/Font.hh"
 #include "ttf/Rasterizer.hh"
-#include "wl/Client.hh"
+#include "wayland/Client.hh"
 
 #include "adt/ScratchBuffer.hh"
 #include "adt/ThreadPool.hh"
@@ -13,7 +13,7 @@ namespace app
 extern int g_argc;
 extern const char* const* g_argv;
 extern bool g_bRunning;
-extern wl::Client g_client;
+extern wayland::Client g_client;
 extern ttf::Font g_font;
 extern ttf::Rasterizer g_rasterizer;
 

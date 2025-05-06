@@ -1,7 +1,7 @@
 #include "Client.hh"
 
 #include "frame.hh"
-#include "wl/shm.hh"
+#include "shm.hh"
 
 #include "adt/StdAllocator.hh"
 #include "adt/defer.hh"
@@ -9,7 +9,7 @@
 
 using namespace adt;
 
-namespace wl
+namespace wayland
 {
 
 void
@@ -157,4 +157,4 @@ Client::Bar::floating(
 {
 }
 
-} /* namespace wl */
+} /* namespace wayland */
