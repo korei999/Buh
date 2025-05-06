@@ -88,30 +88,24 @@ run()
     
                             if (ch == L' ') continue;
     
-                            MapResult mRes = rast.searchGlyph(ch);
+                            const MapResult mRes = rast.searchGlyph(ch);
                             if (mRes.eStatus == MAP_RESULT_STATUS::NOT_FOUND) continue;
     
                             const auto [u, v] = mRes.value();
     
                             const Span2D<u8> spAtlas = rast.atlasSpan();
-                            int maxx = utils::min(bar.m_width, maxAbsX);
-
+                            const int maxx = utils::min(utils::min(bar.m_width, maxAbsX), xOffset + thisXOff + xScale);
                             for (int y = 0; y < scale; ++y)
                             {
-                                for (int x = 0; x < xScale; ++x)
+                                for (int x = xOffset + thisXOff; x < maxx; ++x)
                                 {
-                                    {
-                                        const int off = x + xOffset + thisXOff;
-                                        if (off >= maxx) goto GOTO_done;
-                                    }
-
-                                    const u8 val = spAtlas(x + u, y + v);
+                                    const u8 val = spAtlas((x - xOffset - thisXOff) + u, y + v);
                                     if (val == 0) continue;
 
-                                    auto& rDest = (ImagePixelARGBle&)spBuffer(
-                                        x + xOffset + thisXOff,
+                                    auto& rDest = reinterpret_cast<ImagePixelARGBle&>(spBuffer(
+                                        x,
                                         bar.m_height - 1 - y - yOff
-                                    );
+                                    ));
 
                                     if (val == 255) rDest.data = color;
 
@@ -126,7 +120,7 @@ run()
                                 }
                             }
                         }
-GOTO_done:
+
                         return sv.size() * xScale;
                     };
     
@@ -154,8 +148,8 @@ GOTO_done:
                                     {
                                         StringFixed<64> sf {};
 
-                                        time_t now = time(NULL);
-                                        struct tm tm {};
+                                        const time_t now = time(NULL);
+                                        tm tm {};
                                         localtime_r(&now, &tm);
 
                                         strftime(sf.data(), sf.size() - 1, entry.nts, &tm);
@@ -221,13 +215,11 @@ GOTO_done:
                             const int numberLen = (n*xScale) + xScale/2 + xScale;
                             for (int y = 0; y < scale; ++y)
                             {
-                                for (int x = 0; x < numberLen; ++x)
-                                {
-                                    spBuffer(
-                                        x + xOff,
-                                        bar.m_height - 1 - y - yOff
-                                    ) = 0xffac4242;
-                                }
+#ifdef ADT_AVX2
+                                simd::i32Fillx8({(i32*)&spBuffer(xOff, y), numberLen}, 0xffac4242);
+#else
+                                simd::i32Fillx4({(i32*)&spBuffer(xOff, y), numberLen}, 0xffac4242);
+#endif
                             }
                         }
 
