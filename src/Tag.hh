@@ -1,6 +1,6 @@
 #pragma once
 
-#include "wl/wayland-protocols/dwl-ipc.h"
+#include "wl/WaylandGlueGenerated/dwl-ipc.h"
 
 struct Tag
 {

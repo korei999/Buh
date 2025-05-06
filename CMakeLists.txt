@@ -247,7 +247,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     )
 
     set(WLP "./src/wl")
-    set(WLPD "${WLP}/wayland-protocols")
+    set(WLPD "${WLP}/WaylandGlueGenerated")
     execute_process(
         COMMAND pkg-config wayland-protocols --variable=pkgdatadir
         OUTPUT_VARIABLE WAYLAND_PROTOCOLS_DIR
@@ -261,7 +261,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
     set(XDG_SHELL "${WAYLAND_PROTOCOLS_DIR}/stable/xdg-shell/xdg-shell.xml")
     set(WLR_LAYER_SHELL "protocols/wlr-layer-shell-unstable-v1.xml")
-    set(DWL_IPC "protocols/dwl-ipc-unstable-v2.xml")
+    set(DWL_IPC "protocols/dwl-ipc-unstable-kblayout-v2.xml")
 
     message(STATUS "WLP: '${WLP}'")
     message(STATUS "WLPD: '${WLPD}'")

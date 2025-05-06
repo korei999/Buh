@@ -13,10 +13,9 @@ namespace app
 extern int g_argc;
 extern const char* const* g_argv;
 extern bool g_bRunning;
-extern wl::Client* g_pClient;
+extern wl::Client g_client;
 extern ttf::Font g_font;
 extern ttf::Rasterizer g_rasterizer;
-inline wl::Client& client() { return *g_pClient; }
 
 extern thread_local adt::ScratchBuffer gtl_scratch;
 extern adt::ThreadPool<128> g_threadPool;

@@ -29,7 +29,7 @@ parseArgs(const int argc, const char* const* argv)
                     int num = atoi(argv[i]);
                     if (num == 0)
                     {
-                        print::err("height should be '> 0', got: '{}'\n", num);
+                        print::err("height must be '> 0', got: '{}'\n", num);
                         exit(1);
                     }
                     s_barHeight = num;
@@ -104,10 +104,10 @@ main(const int argc, const char* const* argv)
     }
 
     app::g_rasterizer.rasterizeAscii(StdAllocator::inst(), &app::g_font, s_barHeight);
+    defer( app::g_rasterizer.destroy(StdAllocator::inst()) );
 
-    wl::Client client {"Buh", s_barHeight};
-    app::g_pClient = &client;
-    defer( app::client().destroy() );
+    new(&app::g_client) wl::Client {"Buh", s_barHeight};
+    defer( app::g_client.destroy() );
 
     app::g_bRunning = true;
 

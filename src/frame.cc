@@ -19,7 +19,7 @@ bool g_bRedraw = true;
 void
 run()
 {
-    wl_display* pDisplay = app::client().m_pDisplay;
+    wl_display* pDisplay = app::g_client.m_pDisplay;
     const int fdDisplay = wl_display_get_fd(pDisplay);
     pollfd pfd {.fd = fdDisplay, .events = POLLIN, .revents {}};
 
@@ -55,7 +55,7 @@ run()
             defer( COUT("drew in: {} ms\n", utils::timeNowMS() - currTime) );
 #endif
 
-            for (auto& bar : app::client().m_vBars)
+            for (auto& bar : app::g_client.m_vBars)
             {
                 u32* p = reinterpret_cast<u32*>(bar.m_pPoolData);
                 Span2D<u32> spBuffer {p, bar.m_width, bar.m_height, bar.m_width};
@@ -179,8 +179,7 @@ run()
                                 {
                                     auto clWrite = [&]
                                     {
-                                        StringFixed<64> sf {};
-                                        sf = file::load<64>(entry.nts);
+                                        StringFixed<64> sf = file::load<64>(entry.nts);
                                         if (entry.pfnFormatString)
                                             sf = entry.pfnFormatString(sf.data());
 
@@ -258,12 +257,12 @@ run()
     
                         const int tagXEnd = xOff;
     
-                        const int px = app::client().m_pointer.surfacePointerX;
+                        const int px = app::g_client.m_pointer.surfacePointerX;
                         if (px >= tagXBegin && px < tagXEnd &&
-                            app::client().m_pointer.eButton == wl::Client::Pointer::BUTTON::LEFT
+                            app::g_client.m_pointer.eButton == wl::Client::Pointer::BUTTON::LEFT
                         )
                         {
-                            if (app::client().m_pointer.pLastEnterSufrace == bar.m_pSurface)
+                            if (app::g_client.m_pointer.pLastEnterSufrace == bar.m_pSurface)
                                 zdwl_ipc_output_v2_set_tags(bar.m_pDwlOutput, 1 << tagI, 0);
                         }
                     }
@@ -280,8 +279,8 @@ run()
             }
         }
 
-        app::client().m_pointer.eButton = {};
-        app::client().m_pointer.state = {};
+        app::g_client.m_pointer.eButton = {};
+        app::g_client.m_pointer.state = {};
     }
 }
 

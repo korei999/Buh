@@ -1,7 +1,7 @@
 .cache/
 .vscode/
 build/
-src/wl/wayland-protocols/
+src/wl/WaylandGlueGenerated/
 compile_commands.json
 tags
 .clangd

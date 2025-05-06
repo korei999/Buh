@@ -1,7 +1,7 @@
 #pragma once
 
-#include "wayland-protocols/wlr-layer-shell.h"
-#include "wayland-protocols/dwl-ipc.h"
+#include "WaylandGlueGenerated/wlr-layer-shell.h"
+#include "WaylandGlueGenerated/dwl-ipc.h"
 
 #include "Tag.hh"
 

@@ -10,7 +10,7 @@ namespace app
 int g_argc {};
 const char* const* g_argv {};
 bool g_bRunning {};
-wl::Client* g_pClient {};
+wl::Client g_client {};
 ttf::Font g_font {};
 ttf::Rasterizer g_rasterizer {};
 
