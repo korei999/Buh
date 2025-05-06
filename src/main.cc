@@ -66,7 +66,6 @@ main(const int argc, const char* const* argv)
         utils::max(ADT_GET_NPROCS() - 1, 2)
     };
 
-    // app::g_threadPool.start();
     defer( app::g_threadPool.destroy(StdAllocator::inst()) );
 
     app::allocScratchForThisThread(SIZE_1M);
@@ -74,6 +73,7 @@ main(const int argc, const char* const* argv)
 
     String sFile {};
     defer( sFile.destroy(StdAllocator::inst()) );
+
     if (!s_ntsFontPath)
     {
         new(&app::g_font) ttf::Font {StdAllocator::inst(), StringView {
