@@ -136,7 +136,7 @@ run()
                         const ssize last = utils::size(config::inl_aStatusEntries) - 1;
                         for (ssize i = last; i >= 0; --i)
                         {
-                            const config::StatusEntry& entry = config::inl_aStatusEntries[i];
+                            config::StatusEntry& entry = config::inl_aStatusEntries[i];
                             switch (entry.eType)
                             {
                                 case config::StatusEntry::TYPE::TEXT:
@@ -147,7 +147,7 @@ run()
                                 {
                                     auto clWrite = [&]
                                     {
-                                        StringFixed<64> sf {};
+                                        config::String64 sf {};
 
                                         const time_t now = time(NULL);
                                         tm tm {};
@@ -158,16 +158,13 @@ run()
                                         return sf;
                                     };
 
-                                    static f64 s_lastUpdateTime = utils::timeNowMS();
-                                    static StringFixed<64> s_sfDateTime = clWrite();
-
-                                    if (s_lastUpdateTime + entry.updateRateMS <= currTime)
+                                    if (entry.lastUpdateTimeMS + entry.updateRateMS <= currTime)
                                     {
-                                        s_sfDateTime = clWrite();
-                                        s_lastUpdateTime = currTime;
+                                        entry.sfHolder = clWrite();
+                                        entry.lastUpdateTimeMS = currTime;
                                     }
 
-                                    clDrawEntry(s_sfDateTime);
+                                    clDrawEntry(entry.sfHolder);
                                 }
                                 break;
 
@@ -179,23 +176,20 @@ run()
                                 {
                                     auto clWrite = [&]
                                     {
-                                        StringFixed<64> sf = file::load<64>(entry.nts);
+                                        config::String64 sf = file::load<config::String64::CAP>(entry.nts);
                                         if (entry.pfnFormatString)
                                             sf = entry.pfnFormatString(sf.data());
 
                                         return sf;
                                     };
 
-                                    static f64 s_lastUpdateTime = utils::timeNowMS();
-                                    static StringFixed<64> s_sfFile = clWrite();
-
-                                    if (s_lastUpdateTime + entry.updateRateMS <= currTime)
+                                    if (entry.lastUpdateTimeMS + entry.updateRateMS <= currTime)
                                     {
-                                        s_sfFile = clWrite();
-                                        s_lastUpdateTime = currTime;
+                                        entry.sfHolder = clWrite();
+                                        entry.lastUpdateTimeMS = currTime;
                                     }
 
-                                    clDrawEntry(s_sfFile);
+                                    clDrawEntry(entry.sfHolder);
                                 }
                                 break;
                             }

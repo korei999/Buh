@@ -120,6 +120,7 @@ struct String : public StringView
 template<int SIZE>
 struct StringFixed
 {
+    static constexpr ssize CAP = SIZE;
     static_assert(SIZE > 1);
 
     /* */
@@ -141,10 +142,10 @@ struct StringFixed
 
     operator adt::StringView() { return StringView(m_aBuff); };
     operator const adt::StringView() const { return StringView(m_aBuff); };
+
     explicit operator bool() const { return size() > 0; }
 
     /* */
-
 
     bool operator==(const StringFixed& other) const;
     bool operator==(const adt::StringView sv) const;

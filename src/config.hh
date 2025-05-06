@@ -7,6 +7,9 @@
 namespace config
 {
 
+using String64 = adt::StringFixed<64>;
+using PfnFormatString = String64 (*)(const char* ntsFormat);
+
 struct StatusEntry
 {
     enum class TYPE : adt::u8
@@ -17,14 +20,16 @@ struct StatusEntry
         FILE_WATCH,
     };
 
-    using PfnFormatString = adt::StringFixed<64> (*)(const char* ntsFormat);
-
     /* */
 
     const char* nts {};
     adt::f64 updateRateMS {};
     const char* ntsFormat {};
     PfnFormatString pfnFormatString {};
+
+    String64 sfHolder {};
+    adt::f64 lastUpdateTimeMS {};
+
     TYPE eType {};
 
     /* */
@@ -67,19 +72,35 @@ struct StatusEntry
     }
 };
 
-inline adt::StringFixed<64>
-formatGpuPower(const char* fmt)
+inline String64
+formatGpuTempC(const char* fmt)
 {
-    adt::StringFixed<64> sfRet {};
+    String64 sfRet {};
 
     long long num = atoll(fmt);
-    adt::print::toSpan({sfRet.data(), 64}, "(GPU) {}W", num / 1000000);
+    adt::print::toSpan({sfRet.data(), String64::CAP},
+        "{}C", num / 1000
+    );
 
     return sfRet;
 }
 
-inline const StatusEntry inl_aStatusEntries[] {
-    StatusEntry::makeFileWatch("/sys/class/drm/card1/device/hwmon/hwmon3/power1_input", 5000.0, formatGpuPower),
+inline String64
+formatGpuPower(const char* fmt)
+{
+    String64 sfRet {};
+
+    long long num = atoll(fmt);
+    adt::print::toSpan({sfRet.data(), String64::CAP},
+        "{}W", num / 1000000
+    );
+
+    return sfRet;
+}
+
+inline StatusEntry inl_aStatusEntries[] {
+    StatusEntry::makeFileWatch("/sys/class/drm/card1/device/hwmon/hwmon3/temp2_input", 3000.0, formatGpuTempC),
+    StatusEntry::makeFileWatch("/sys/class/drm/card1/device/hwmon/hwmon3/power1_input", 3000.0, formatGpuPower),
     StatusEntry::makeDateTime("%Y-%m-%d %I:%M%p", 1000.0*30), /* `man strftime` */
     StatusEntry::makeKeyboardLayout(),
 };
