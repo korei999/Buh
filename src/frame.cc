@@ -41,7 +41,8 @@ run()
         const int pollStatus = poll(&pfd, 1, static_cast<int>(updateRateMS));
 
         if (pfd.revents & POLLIN)
-            wl_display_dispatch(pDisplay);
+            if (wl_display_dispatch(pDisplay) == -1)
+                return;
 
         if (pollStatus == 0) g_bRedraw = true;
 

@@ -1,7 +1,7 @@
 #include "Client.hh"
 
-#include "wl/shm.hh"
 #include "frame.hh"
+#include "wl/shm.hh"
 
 #include "adt/StdAllocator.hh"
 #include "adt/defer.hh"
@@ -52,6 +52,8 @@ Client::Bar::destroy()
     wl_surface_destroy(m_pSurface);
     zdwl_ipc_output_v2_destroy(m_pDwlOutput);
     wl_buffer_destroy(m_pBuffer);
+
+    m_vTags.destroy(StdAllocator::inst());
 }
 
 void

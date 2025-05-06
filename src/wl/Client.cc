@@ -133,7 +133,19 @@ Client::Client(const char* ntsName, const int height)
 void
 Client::destroy()
 {
-    LOG_NOTIFY("destroy()\n");
+    LOG_WARN("destroy()...\n");
+
+    for (auto& bar : m_vBars) bar.destroy();
+    m_vBars.destroy(StdAllocator::inst());
+
+    if (m_pDwlManager) zdwl_ipc_manager_v2_destroy(m_pDwlManager);
+    if (m_pLayerShell) zwlr_layer_shell_v1_destroy(m_pLayerShell);
+    if (m_pPointer) wl_pointer_destroy(m_pPointer);
+    if (m_pSeat) wl_seat_destroy(m_pSeat);
+    if (m_pShm) wl_shm_destroy(m_pShm);
+    if (m_pCompositor) wl_compositor_destroy(m_pCompositor);
+    if (m_pRegistry) wl_registry_destroy(m_pRegistry);
+    if (m_pDisplay) wl_display_disconnect(m_pDisplay);
 }
 
 void
