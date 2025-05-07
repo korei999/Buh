@@ -5,19 +5,31 @@
 
 #include <poll.h>
 
+#include "adt/logs.hh"
+#include "adt/file.hh"
+#include "adt/simd.hh"
+
 using namespace adt;
 
 namespace frame
 {
 
-bool g_bRedraw = true;
+bool g_bRedraw = false;
 
 void
 run()
 {
     wl_display* pDisplay = app::g_client.m_pDisplay;
-    const int fdDisplay = wl_display_get_fd(pDisplay);
-    pollfd pfd {.fd = fdDisplay, .events = POLLIN, .revents {}};
+    pw_loop* pPwLoop = pw_main_loop_get_loop(app::g_pw.m_pMainLoop);
+
+    struct PollFds
+    {
+        pollfd wl {};
+        pollfd pw {};
+    } pfds {
+        .wl {.fd = wl_display_get_fd(pDisplay), .events = POLLIN, .revents {}},
+        .pw {.fd = pw_loop_get_fd(pPwLoop), .events = POLLIN, .revents {}},
+    };
 
     const ttf::Rasterizer& rast = app::g_rasterizer;
     const int scale = static_cast<int>(rast.m_scale);
@@ -34,11 +46,17 @@ run()
     {
         wl_display_flush(pDisplay);
 
-        const int pollStatus = poll(&pfd, 1, static_cast<int>(updateRateMS));
+        const int pollStatus = poll(
+            reinterpret_cast<pollfd*>(&pfds),
+            sizeof(PollFds)/sizeof(pollfd),
+            updateRateMS
+        );
 
-        if (pfd.revents & POLLIN)
+        if (pfds.wl.revents & POLLIN)
             if (wl_display_dispatch(pDisplay) == -1)
                 return;
+
+        pw_loop_iterate(pPwLoop, 0);
 
         if (pollStatus == 0) g_bRedraw = true;
 
@@ -51,15 +69,17 @@ run()
             defer( COUT("drew in: {} ms\n", utils::timeNowMS() - currTime) );
 #endif
 
-            for (auto& bar : app::g_client.m_vBars)
+            for (wayland::Client::Bar* rpBar : app::g_client.m_vpBars)
             {
-                u32* p = reinterpret_cast<u32*>(bar.m_pPoolData);
-                Span2D<u32> spBuffer {p, bar.m_width, bar.m_height, bar.m_width};
+                wayland::Client::Bar& rbar = *rpBar;
+
+                u32* p = reinterpret_cast<u32*>(rbar.m_pPoolData);
+                Span2D<u32> spBuffer {p, rbar.m_width, rbar.m_height, rbar.m_width};
     
 #ifdef ADT_AVX2
                 simd::i32Fillx8({reinterpret_cast<i32*>(p), bar.m_width * bar.m_height}, 0xff777777);
 #else
-                simd::i32Fillx4({reinterpret_cast<i32*>(p), bar.m_width * bar.m_height}, 0xff777777);
+                simd::i32Fillx4({reinterpret_cast<i32*>(p), rbar.m_width * rbar.m_height}, 0xff777777);
 #endif
     
                 {
@@ -91,7 +111,7 @@ run()
                             const auto [u, v] = mRes.value();
     
                             const Span2D<u8> spAtlas = rast.atlasSpan();
-                            const int maxx = utils::min(utils::min(bar.m_width, maxAbsX), xOffset + thisXOff + xScale);
+                            const int maxx = utils::min(utils::min(rbar.m_width, maxAbsX), xOffset + thisXOff + xScale);
                             for (int y = 0; y < scale; ++y)
                             {
                                 for (int x = xOffset + thisXOff; x < maxx; ++x)
@@ -101,7 +121,7 @@ run()
 
                                     auto& rDest = reinterpret_cast<ImagePixelARGBle&>(spBuffer(
                                         x,
-                                        bar.m_height - 1 - y - yOff
+                                        rbar.m_height - 1 - y - yOff
                                     ));
 
                                     if (val == 255) rDest.data = color;
@@ -121,7 +141,7 @@ run()
                         return sv.size() * xScale;
                     };
     
-                    int xOffStatus = bar.m_width;
+                    int xOffStatus = rbar.m_width;
                     {
                         auto clDrawEntry = [&](const StringView sv)
                         {
@@ -165,7 +185,7 @@ run()
                                 break;
 
                                 case config::StatusEntry::TYPE::KEYBOARD_LAYOUT:
-                                clDrawEntry(bar.m_sfKbLayout);
+                                clDrawEntry(rbar.m_sfKbLayout);
                                 break;
 
                                 case config::StatusEntry::TYPE::FILE_WATCH:
@@ -193,9 +213,9 @@ run()
                         }
                     }
     
-                    for (const Tag& tag : bar.m_vTags)
+                    for (const Tag& tag : rbar.m_vTags)
                     {
-                        const ssize tagI = bar.m_vTags.idx(&tag);
+                        const ssize tagI = rbar.m_vTags.idx(&tag);
                         char aBuff[4] {};
                         const ssize n = print::toSpan(aBuff, "{}", 1 + tagI);
                         const int tagXBegin = xOff;
@@ -232,7 +252,7 @@ run()
                         if (tag.nClients > 0)
                         {
                             /* draw lil something */
-                            const int height = bar.m_height / 5;
+                            const int height = rbar.m_height / 5;
                             const int yOff2 = height / 1.5;
                             for (int y = 0; y < height; ++y)
                             {
@@ -252,20 +272,20 @@ run()
                             app::g_client.m_pointer.eButton == wayland::Client::Pointer::BUTTON::LEFT
                         )
                         {
-                            if (app::g_client.m_pointer.pLastEnterSufrace == bar.m_pSurface)
-                                zdwl_ipc_output_v2_set_tags(bar.m_pDwlOutput, 1 << tagI, 0);
+                            if (app::g_client.m_pointer.pLastEnterSufrace == rbar.m_pSurface)
+                                zdwl_ipc_output_v2_set_tags(rbar.m_pDwlOutput, 1 << tagI, 0);
                         }
                     }
                     xOff += xScale;
     
-                    xOff += clDrawString(xOff, bar.m_sfLayoutIcon, 0xff000000, xOffStatus);
+                    xOff += clDrawString(xOff, rbar.m_sfLayoutIcon, 0xff000000, xOffStatus);
                     xOff += xScale * 2;
-                    xOff += clDrawString(xOff, bar.m_sfTitle, 0xff000000, xOffStatus);
+                    xOff += clDrawString(xOff, rbar.m_sfTitle, 0xff000000, xOffStatus);
                 }
     
-                wl_surface_attach(bar.m_pSurface, bar.m_pBuffer, 0, 0);
-                wl_surface_damage_buffer(bar.m_pSurface, 0, 0, bar.m_width, bar.m_height);
-                wl_surface_commit(bar.m_pSurface);
+                wl_surface_attach(rbar.m_pSurface, rbar.m_pBuffer, 0, 0);
+                wl_surface_damage_buffer(rbar.m_pSurface, 0, 0, rbar.m_width, rbar.m_height);
+                wl_surface_commit(rbar.m_pSurface);
             }
         }
 

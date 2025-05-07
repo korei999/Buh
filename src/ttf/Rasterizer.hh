@@ -4,6 +4,8 @@
 
 #include "Image.hh"
 
+#include "adt/Pair.hh"
+
 namespace ttf
 {
 

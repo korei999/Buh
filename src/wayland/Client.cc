@@ -1,5 +1,9 @@
 #include "Client.hh"
 
+#include "adt/Pair.hh"
+#include "adt/logs.hh"
+#include "adt/StdAllocator.hh"
+
 using namespace adt;
 
 namespace wayland
@@ -130,8 +134,11 @@ Client::destroy()
 {
     LOG_WARN("destroy()...\n");
 
-    for (auto& bar : m_vBars) bar.destroy();
-    m_vBars.destroy(StdAllocator::inst());
+    for (auto& bar : m_vpBars)
+    {
+        bar->destroy();
+        StdAllocator::inst()->free(bar);
+    }
 
     if (m_pDwlManager) zdwl_ipc_manager_v2_destroy(m_pDwlManager);
     if (m_pLayerShell) zwlr_layer_shell_v1_destroy(m_pLayerShell);
@@ -161,7 +168,6 @@ Client::registryGlobal(
             ),
             ""
         );
-        LOG_GOOD("interface: '{}', version: {}, name: {}\n", interface, version, name);
     }
     else if (svInterface == wl_seat_interface.name)
     {
@@ -171,7 +177,6 @@ Client::registryGlobal(
             ),
             ""
         );
-        LOG_GOOD("interface: '{}', version: {}, name: {}\n", interface, version, name);
 
         wl_seat_add_listener(m_pSeat, &s_seatListener, this);
     }
@@ -183,7 +188,6 @@ Client::registryGlobal(
             ),
             ""
         );
-        LOG_GOOD("interface: '{}', version: {}, name: {}\n", interface, version, name);
     }
     else if (svInterface == wl_output_interface.name)
     {
@@ -194,15 +198,13 @@ Client::registryGlobal(
             ),
             ""
         );
-        LOG_GOOD("interface: '{}', version: {}, name: {}, registry: {}\n", interface, version, name, wl_registry);
 
         auto* pSurface = wl_compositor_create_surface(m_pCompositor);
         ADT_ASSERT_ALWAYS(pSurface, "wl_compositor_create_surface(m_pCompositor) failed");
 
-        m_vBars.push(StdAllocator::inst(), {});
-
         {
-            auto& bar = m_vBars.last();
+            Bar& bar = *StdAllocator::inst()->alloc<Bar>();
+            m_vpBars.push(StdAllocator::inst(), &bar);
 
             bar.m_pOutput = p;
             bar.m_pSurface = pSurface;
@@ -248,7 +250,6 @@ Client::registryGlobal(
             ),
             ""
         );
-        LOG_GOOD("interface: '{}', version: {}, name: {}\n", interface, version, name);
     }
     else if (svInterface == zdwl_ipc_manager_v2_interface.name)
     {
@@ -258,7 +259,6 @@ Client::registryGlobal(
             ),
             ""
         );
-        LOG_GOOD("interface: '{}', version: {}, name: {}\n", interface, version, name);
 
         zdwl_ipc_manager_v2_add_listener(m_pDwlManager, &s_dwlListener, this);
     }
@@ -270,13 +270,17 @@ Client::registryGlobalRemove(
     [[maybe_unused]] u32 name
 )
 {
-    for (ssize i = 0; i < m_vBars.size(); ++i)
+    for (ssize i = 0; i < m_vpBars.size(); ++i)
     {
-        Bar& bar = m_vBars[i];
-        if (name == bar.m_outputRegistryName)
+        if (name == m_vpBars[i]->m_outputRegistryName)
         {
-            bar.destroy();
-            m_vBars.popAsLast(i);
+            Bar* pBar = m_vpBars[i];
+
+            pBar->destroy();
+            m_vpBars.popAsLast(i);
+            StdAllocator::inst()->free(pBar);
+
+            break;
         }
     }
 }

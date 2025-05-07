@@ -1,5 +1,7 @@
 #pragma once
 
+#include "adt/Span2D.hh"
+
 union ImagePixelRGBA
 {
     struct { adt::u8 r, g, b, a; };

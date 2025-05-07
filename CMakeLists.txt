@@ -34,7 +34,7 @@ option(OPT_MIMALLOC "" OFF)
 option(OPT_SW "" OFF)
 option(OPT_GL "" ON)
 option(OPT_FAST_MATH "" OFF)
-option(OPT_PRECOMPILE_ADT "" ON)
+option(OPT_PRECOMPILE_ADT "" OFF)
 option(OPT_ANALYZE "" OFF)
 
 if (OPT_ANALYZE)
@@ -211,12 +211,14 @@ add_executable(
     src/frame.cc
     src/Image.cc
 
+    src/ttf/Font.cc
+    src/ttf/Rasterizer.cc
+
     src/wayland/Client.cc
     src/wayland/ClientInput.cc
     src/wayland/ClientBarOutput.cc
 
-    src/ttf/Font.cc
-    src/ttf/Rasterizer.cc
+    src/PipeWire/PipeWire.cc
 )
 
 if (OPT_PRECOMPILE_ADT)
@@ -238,7 +240,7 @@ endif()
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     find_package(PkgConfig REQUIRED)
-    pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client)
+    pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client libpipewire-0.3)
 
     include_directories(BEFORE ${WAYLAND_CLIENT_INCLUDE_DIRS})
     target_link_libraries(

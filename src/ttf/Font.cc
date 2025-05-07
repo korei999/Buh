@@ -2,6 +2,8 @@
 
 #include <cmath>
 
+#include "adt/logs.hh"
+
 using namespace adt;
 
 namespace ttf

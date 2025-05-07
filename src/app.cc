@@ -1,5 +1,7 @@
 #include "app.hh"
 
+#include "adt/StdAllocator.hh"
+
 using namespace adt;
 
 namespace app
@@ -7,8 +9,12 @@ namespace app
 
 int g_argc {};
 const char* const* g_argv {};
+
 bool g_bRunning {};
+
 wayland::Client g_client {};
+PipeWire g_pw {};
+
 ttf::Font g_font {};
 ttf::Rasterizer g_rasterizer {};
 

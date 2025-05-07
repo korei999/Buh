@@ -3,6 +3,9 @@
 
 #include "font.bin"
 
+#include "adt/file.hh"
+#include "adt/StdAllocator.hh"
+
 using namespace adt;
 
 static int s_barHeight = 24;
@@ -61,7 +64,6 @@ main(const int argc, const char* const* argv)
         +[](void*) { app::destroyScratchForThisThread(); }, {},
         utils::max(ADT_GET_NPROCS() - 1, 2)
     };
-
     defer( app::g_threadPool.destroy(StdAllocator::inst()) );
 
     app::allocScratchForThisThread(SIZE_1M);
@@ -98,6 +100,9 @@ main(const int argc, const char* const* argv)
             return 1;
         }
     }
+
+    new(&app::g_pw) PipeWire {INIT};
+    defer( app::g_pw.destroy() );
 
     app::g_rasterizer.rasterizeAscii(StdAllocator::inst(), &app::g_font, s_barHeight);
     defer( app::g_rasterizer.destroy(StdAllocator::inst()) );

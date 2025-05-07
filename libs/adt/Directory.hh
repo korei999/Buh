@@ -7,9 +7,6 @@
 
 #include <cstdio>
 
-namespace adt
-{
-
 #if __has_include(<dirent.h>)
 
     #define ADT_USE_DIRENT
@@ -34,6 +31,9 @@ namespace adt
 #endif
 
 #ifdef ADT_USE_DIRENT
+
+namespace adt
+{
 
 struct Directory
 {

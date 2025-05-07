@@ -5,6 +5,9 @@
 
 #include "Tag.hh"
 
+#include "adt/Vec.hh"
+#include "adt/String.hh"
+
 namespace wayland
 {
 
@@ -88,7 +91,7 @@ struct Client
     wl_registry* m_pRegistry {};
     wl_compositor* m_pCompositor {};
 
-    adt::Vec<Bar> m_vBars {};
+    adt::Vec<Bar*> m_vpBars {};
 
     wl_shm* m_pShm {};
     int m_barHeight {};
