@@ -12,8 +12,7 @@ const char* const* g_argv {};
 
 bool g_bRunning {};
 
-wayland::Client g_client {};
-PipeWire g_pw {};
+wayland::Client g_wlClient {};
 
 ttf::Font g_font {};
 ttf::Rasterizer g_rasterizer {};

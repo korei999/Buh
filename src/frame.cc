@@ -19,17 +19,8 @@ bool g_bRedraw = false;
 void
 run()
 {
-    wl_display* pDisplay = app::g_client.m_pDisplay;
-    pw_loop* pPwLoop = pw_main_loop_get_loop(app::g_pw.m_pMainLoop);
-
-    struct PollFds
-    {
-        pollfd wl {};
-        pollfd pw {};
-    } pfds {
-        .wl {.fd = wl_display_get_fd(pDisplay), .events = POLLIN, .revents {}},
-        .pw {.fd = pw_loop_get_fd(pPwLoop), .events = POLLIN, .revents {}},
-    };
+    wl_display* pDisplay = app::g_wlClient.m_pDisplay;
+    pollfd pfd {.fd = wl_display_get_fd(pDisplay), .events = POLLIN, .revents {}};
 
     const ttf::Rasterizer& rast = app::g_rasterizer;
     const int scale = static_cast<int>(rast.m_scale);
@@ -46,17 +37,11 @@ run()
     {
         wl_display_flush(pDisplay);
 
-        const int pollStatus = poll(
-            reinterpret_cast<pollfd*>(&pfds),
-            sizeof(PollFds)/sizeof(pollfd),
-            updateRateMS
-        );
+        const int pollStatus = poll(&pfd, 1, updateRateMS);
 
-        if (pfds.wl.revents & POLLIN)
+        if (pfd.revents & POLLIN)
             if (wl_display_dispatch(pDisplay) == -1)
                 return;
-
-        pw_loop_iterate(pPwLoop, 0);
 
         if (pollStatus == 0) g_bRedraw = true;
 
@@ -69,9 +54,9 @@ run()
             defer( COUT("drew in: {} ms\n", utils::timeNowMS() - currTime) );
 #endif
 
-            for (wayland::Client::Bar* rpBar : app::g_client.m_vpBars)
+            for (wayland::Client::Bar* pBar : app::g_wlClient.m_vpBars)
             {
-                wayland::Client::Bar& rbar = *rpBar;
+                wayland::Client::Bar& rbar = *pBar;
 
                 u32* p = reinterpret_cast<u32*>(rbar.m_pPoolData);
                 Span2D<u32> spBuffer {p, rbar.m_width, rbar.m_height, rbar.m_width};
@@ -267,12 +252,12 @@ run()
     
                         const int tagXEnd = xOff;
     
-                        const int px = app::g_client.m_pointer.surfacePointerX;
+                        const int px = app::g_wlClient.m_pointer.surfacePointerX;
                         if (px >= tagXBegin && px < tagXEnd &&
-                            app::g_client.m_pointer.eButton == wayland::Client::Pointer::BUTTON::LEFT
+                            app::g_wlClient.m_pointer.eButton == wayland::Client::Pointer::BUTTON::LEFT
                         )
                         {
-                            if (app::g_client.m_pointer.pLastEnterSufrace == rbar.m_pSurface)
+                            if (app::g_wlClient.m_pointer.pLastEnterSufrace == rbar.m_pSurface)
                                 zdwl_ipc_output_v2_set_tags(rbar.m_pDwlOutput, 1 << tagI, 0);
                         }
                     }
@@ -289,8 +274,8 @@ run()
             }
         }
 
-        app::g_client.m_pointer.eButton = {};
-        app::g_client.m_pointer.state = {};
+        app::g_wlClient.m_pointer.eButton = {};
+        app::g_wlClient.m_pointer.state = {};
     }
 }
 

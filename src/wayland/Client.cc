@@ -272,10 +272,9 @@ Client::registryGlobalRemove(
 {
     for (ssize i = 0; i < m_vpBars.size(); ++i)
     {
-        if (name == m_vpBars[i]->m_outputRegistryName)
+        Bar* pBar = m_vpBars[i];
+        if (name == pBar->m_outputRegistryName)
         {
-            Bar* pBar = m_vpBars[i];
-
             pBar->destroy();
             m_vpBars.popAsLast(i);
             StdAllocator::inst()->free(pBar);

@@ -217,8 +217,6 @@ add_executable(
     src/wayland/Client.cc
     src/wayland/ClientInput.cc
     src/wayland/ClientBarOutput.cc
-
-    src/PipeWire/PipeWire.cc
 )
 
 if (OPT_PRECOMPILE_ADT)
@@ -240,7 +238,7 @@ endif()
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     find_package(PkgConfig REQUIRED)
-    pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client libpipewire-0.3)
+    pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client)
 
     include_directories(BEFORE ${WAYLAND_CLIENT_INCLUDE_DIRS})
     target_link_libraries(

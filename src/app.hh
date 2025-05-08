@@ -3,7 +3,6 @@
 #include "ttf/Font.hh"
 #include "ttf/Rasterizer.hh"
 #include "wayland/Client.hh"
-#include "PipeWire/PipeWire.hh"
 
 #include "adt/ScratchBuffer.hh"
 #include "adt/ThreadPool.hh"
@@ -16,8 +15,7 @@ extern const char* const* g_argv;
 
 extern bool g_bRunning;
 
-extern wayland::Client g_client;
-extern PipeWire g_pw;
+extern wayland::Client g_wlClient;
 
 extern ttf::Font g_font;
 extern ttf::Rasterizer g_rasterizer;

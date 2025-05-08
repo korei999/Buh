@@ -101,14 +101,11 @@ main(const int argc, const char* const* argv)
         }
     }
 
-    new(&app::g_pw) PipeWire {INIT};
-    defer( app::g_pw.destroy() );
-
     app::g_rasterizer.rasterizeAscii(StdAllocator::inst(), &app::g_font, s_barHeight);
     defer( app::g_rasterizer.destroy(StdAllocator::inst()) );
 
-    new(&app::g_client) wayland::Client {"Buh", s_barHeight};
-    defer( app::g_client.destroy() );
+    new(&app::g_wlClient) wayland::Client {"Buh", s_barHeight};
+    defer( app::g_wlClient.destroy() );
 
     app::g_bRunning = true;
 
