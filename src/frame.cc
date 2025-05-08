@@ -62,7 +62,7 @@ run()
                 Span2D<u32> spBuffer {p, rbar.m_width, rbar.m_height, rbar.m_width};
     
 #ifdef ADT_AVX2
-                simd::i32Fillx8({reinterpret_cast<i32*>(p), bar.m_width * bar.m_height}, 0xff777777);
+                simd::i32Fillx8({reinterpret_cast<i32*>(p), rbar.m_width * rbar.m_height}, 0xff777777);
 #else
                 simd::i32Fillx4({reinterpret_cast<i32*>(p), rbar.m_width * rbar.m_height}, 0xff777777);
 #endif
