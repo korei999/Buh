@@ -286,15 +286,15 @@ Rasterizer::rasterizeAsciiIntoAltas(IAllocator* pAlloc, Parser* pFont, f32 scale
     const int iScale = std::round(scale);
     m_scale = scale;
 
-    constexpr ssize nSquares = 10;
-    m_nSquares = nSquares;
-    const ssize size = math::sq(scale) * math::sq(nSquares);
-    m_altasAllocSize = size;
+    constexpr ssize width = 10;
+    constexpr ssize height = 10;
+
+    const ssize size = width * scale * height * scale;;
 
     m_altas.m_eType = Image::TYPE::MONO;
     m_altas.m_uData.pMono = pAlloc->zallocV<u8>(size);
-    m_altas.m_width = nSquares * scale;
-    m_altas.m_height = nSquares * scale;
+    m_altas.m_width = width * scale;
+    m_altas.m_height = height * scale;
 
     const i16 xStep = iScale * X_STEP;
 
@@ -337,10 +337,10 @@ Rasterizer::rasterizeAsciiIntoAltas(IAllocator* pAlloc, Parser* pFont, f32 scale
                 pCl
             );
 
-            if ((m_xOffAtlas += xStep) >= (nSquares*iScale) - xStep)
+            if ((m_xOffAtlas += xStep) >= (m_altas.m_width) - xStep)
             {
                 m_xOffAtlas = 0;
-                if ((m_yOffAtlas += iScale) >= (nSquares*iScale) - iScale)
+                if ((m_yOffAtlas += iScale) >= (m_altas.m_height) - iScale)
                     break;
             }
         }
@@ -372,22 +372,18 @@ Rasterizer::readGlyph(IAllocator* pAlloc, Parser* pFont, u32 code)
     rasterizeGlyph(*pFont, *pGlyph, m_xOffAtlas, m_yOffAtlas);
     auto mapRes = m_mapCodeToUV.insert(pAlloc, code, {m_xOffAtlas, m_yOffAtlas});
 
-    if ((m_xOffAtlas += xStep) >= (m_nSquares*iScale) - xStep)
+    if ((m_xOffAtlas += xStep) >= (m_altas.m_width) - xStep)
     {
         m_xOffAtlas = 0;
-        if ((m_yOffAtlas += iScale) >= (m_nSquares*iScale) - iScale)
+        if ((m_yOffAtlas += iScale) >= (m_altas.m_height) - iScale)
         {
             m_altas.m_uData.pMono = pAlloc->reallocV<u8>(
                 m_altas.m_uData.pMono,
-                m_altasAllocSize,
-                m_altasAllocSize * 2
+                m_altas.m_width * m_altas.m_height,
+                m_altas.m_width * (m_altas.m_height*2)
             );
 
-            m_nSquares *= 2;
-            m_altasAllocSize *= 2;
-
-            m_altas.m_width = m_nSquares * m_scale;
-            m_altas.m_height = m_nSquares * m_scale;
+            m_altas.m_height *= 2;
         }
     }
 

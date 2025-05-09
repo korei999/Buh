@@ -35,10 +35,6 @@ struct Rasterizer
     adt::MapResult<adt::u32, adt::Pair<adt::i16, adt::i16>> readGlyph(adt::IAllocator* pAlloc, Parser* pFont, adt::u32 code);
 
     void rasterizeGlyph(const Parser& pFont, const Glyph& pGlyph, int xOff, int yOff); /* NOTE: uses app::gtl_scratch */
-
-protected:
-    int m_nSquares {};
-    int m_altasAllocSize {};
 };
 
 } /* namespace ttf */
