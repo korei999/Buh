@@ -21,7 +21,7 @@
     #include <sysinfoapi.h>
 #endif
 
-#include "types.hh"
+#include "PairDecl.hh"
 #include "assert.hh"
 
 #include <ctime>
@@ -70,6 +70,14 @@ template<typename T>
 min(const T& l, const T& r)
 {
     return l < r ? l : r;
+}
+
+template<typename T>
+[[nodiscard]] inline Pair<T, T>
+minMax(const T& l, const T& r)
+{
+    if (l > r) return {r, l};
+    else return {l, r};
 }
 
 [[nodiscard]] inline constexpr ssize

@@ -43,7 +43,7 @@ struct Parser
 private:
     bool parse();
     bool parse2();
-    adt::MapResult<adt::StringView, TableRecord> getTable(adt::StringView sTableTag);
+    adt::MapResult<adt::StringView, TableRecord> searchTable(adt::StringView sTableTag);
     void readHeadTable();
     void readCmapTable();
     void readCmap(adt::u32 offset);

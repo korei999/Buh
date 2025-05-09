@@ -24,7 +24,7 @@ struct Rasterizer
     /* */
 
     void destroy(adt::IAllocator* pAlloc);
-    void rasterizeAscii(adt::IAllocator* pAlloc, Parser* pFont, adt::f32 scale); /* NOTE: uses app::gtl_scratch */
+    void rasterizeAsciiIntoAltas(adt::IAllocator* pAlloc, Parser* pFont, adt::f32 scale); /* NOTE: uses app::gtl_scratch */
 
     adt::Span2D<adt::u8> atlasSpan() { return m_altas.spanMono(); }
     const adt::Span2D<adt::u8> atlasSpan() const { return m_altas.spanMono(); }

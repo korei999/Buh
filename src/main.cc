@@ -101,7 +101,7 @@ main(const int argc, const char* const* argv)
         }
     }
 
-    app::g_rasterizer.rasterizeAscii(StdAllocator::inst(), &app::g_font, s_barHeight);
+    app::g_rasterizer.rasterizeAsciiIntoAltas(StdAllocator::inst(), &app::g_font, s_barHeight);
     defer( app::g_rasterizer.destroy(StdAllocator::inst()) );
 
     new(&app::g_wlClient) wayland::Client {"Buh", s_barHeight};

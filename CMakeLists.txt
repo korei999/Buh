@@ -37,6 +37,8 @@ option(OPT_FAST_MATH "" OFF)
 option(OPT_PRECOMPILE_ADT "" OFF)
 option(OPT_ANALYZE "" OFF)
 
+option(OPT_DBG_TTF "" OFF)
+
 if (OPT_ANALYZE)
     add_compile_options(-fanalyzer)
 endif()
@@ -82,6 +84,10 @@ if (OPT_AVX2)
     else()
         add_compile_options(-mavx2 -mfma)
     endif()
+endif()
+
+if (OPT_DBG_TTF)
+    add_definitions("-DOPT_DBG_TTF")
 endif()
 
 if (CMAKE_BUILD_TYPE MATCHES "DebugMingw" OR CMAKE_BUILD_TYPE MATCHES "ReleaseMingw")

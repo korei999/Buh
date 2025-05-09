@@ -218,57 +218,50 @@ Rasterizer::rasterizeGlyph(const Parser& font, const Glyph& glyph, int xOff, int
             if (vCurvyPoints[pointI].bEndOfCurve)
                 ++pointI;
 
-            /* for the intersection all we need is to find what X is when our y = scanline or when y is equal to i of the loop
-             *
-             * y - y1 = m*(x - x1) sub both sides by m
-             * (y - y1)/m = x - x1 add x1 to both sides
-             * (y-y1)*1/m + x1 = x m is just the slope of the line so dy/dx and 1/m is dx/dy
-             * y in this equation would be the scanline, x1 & y1 */
-
-            const f32 biggerY = utils::max(y0, y1);
-            const f32 smallerY = utils::min(y0, y1);
+            const auto [smallerY, biggerY] = utils::minMax(y0, y1);
 
             if (scanline <= smallerY || scanline > biggerY) continue;
 
-            const f32 dx = x1 - x0;
+            /* Scanline: horizontal line that intersects edges. Find X for scanline Y.
+             * |
+             * |      /(x1, y1)
+             * |____/______________inter(x, y)
+             * |  /
+             * |/(x0, y0)
+             * +------------ */
+
             const f32 dy = y1 - y0;
+            const f32 dx = x1 - x0;
 
-            if (dy == 0.0f) continue;
+            const f32 interX = (scanline - y1)/dy * dx + x1;
 
-            f32 intersection = -1.0f;
-
-            if (dx == 0.0f) intersection = x1;
-            else intersection = (scanline - y1)*(dx/dy) + x1;
-
-            if (aIntersections.size() >= aIntersections.cap()) continue;
-
-            aIntersections.push(intersection);
+            aIntersections.push(interX);
         }
 
         if (aIntersections.size() > 1)
         {
             sort::insertion(&aIntersections);
 
-            for (ssize intIdx = 1; intIdx < aIntersections.size(); intIdx += 2)
+            for (ssize intI = 1; intI < aIntersections.size(); intI += 2)
             {
-                const f32 start = aIntersections[intIdx - 1];
-                const int startIdx = start;
-                const f32 startCovered = (startIdx + 1) - start;
+                const f32 start = aIntersections[intI - 1];
+                const int startI = start;
+                const f32 startCovered = (startI + 1) - start;
 
-                const f32 end = aIntersections[intIdx];
+                const f32 end = aIntersections[intI];
                 const int endIdx = end;
                 const f32 endCovered = end - endIdx;
 
-                for (int col = startIdx + 1; col < endIdx; ++col)
+                for (int col = startI + 1; col < endIdx; ++col)
                     spAtlas(xOff + col, yOff + row) = 255;
 
-                if (startIdx == endIdx)
+                if (startI == endIdx)
                 {
-                    spAtlas(xOff + startIdx, yOff + row) += 255.0f * startCovered;
+                    spAtlas(xOff + startI, yOff + row) += 255.0f * startCovered;
                 }
                 else
                 {
-                    spAtlas(xOff + startIdx, yOff + row) += 255.0f * startCovered;
+                    spAtlas(xOff + startI, yOff + row) += 255.0f * startCovered;
                     spAtlas(xOff + endIdx, yOff + row) += 255.0f * endCovered;
                 }
             }
@@ -277,7 +270,7 @@ Rasterizer::rasterizeGlyph(const Parser& font, const Glyph& glyph, int xOff, int
 }
 
 void
-Rasterizer::rasterizeAscii(IAllocator* pAlloc, Parser* pFont, f32 scale)
+Rasterizer::rasterizeAsciiIntoAltas(IAllocator* pAlloc, Parser* pFont, f32 scale)
 {
     if (!pAlloc)
     {
