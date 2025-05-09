@@ -249,13 +249,13 @@ Rasterizer::rasterizeGlyph(const Parser& font, const Glyph& glyph, int xOff, int
         {
             sort::insertion(&aIntersections);
 
-            for (ssize intIdx = 0; intIdx + 1 < aIntersections.size(); intIdx += 2)
+            for (ssize intIdx = 1; intIdx < aIntersections.size(); intIdx += 2)
             {
-                const f32 start = aIntersections[intIdx];
+                const f32 start = aIntersections[intIdx - 1];
                 const int startIdx = start;
                 const f32 startCovered = (startIdx + 1) - start;
 
-                const f32 end = aIntersections[intIdx + 1];
+                const f32 end = aIntersections[intIdx];
                 const int endIdx = end;
                 const f32 endCovered = end - endIdx;
 
