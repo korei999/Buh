@@ -85,19 +85,12 @@ run()
                         const u8 penG = (color >> 8) & 0xff;
                         const u8 penB = (color >> 0) & 0xff;
 
-                        // LOG_GOOD("word: '{}'\n", sv);
-                        // for (const wchar_t ch : StringGlyphIt(sv))
-                        //     CERR("{}", ch);
-                        // CERR("\n");
-
                         for (const wchar_t ch : StringGlyphIt(sv))
                         {
                             defer( thisXOff += xScale );
     
                             if (ch == L' ') continue;
     
-                            // const MapResult mRes = rast.searchGlyphAtlasUV(ch);
-                            // const MapResult mRes = rast.readGlyph(StdAllocator::inst(), &app::g_font, L'я');
                             const MapResult mRes = rast.readGlyph(StdAllocator::inst(), &app::g_font, ch);
                             if (!mRes) continue;
     
