@@ -1,4 +1,4 @@
-#include "Font.hh"
+#include "Parser.hh"
 
 #include <cmath>
 
@@ -19,7 +19,7 @@ F2Dot14Tof32(F2Dot14 x)
 }
 
 bool
-Font::parse()
+Parser::parse()
 {
     if (!parse2()) return false;
 
@@ -90,19 +90,19 @@ languageIDToString(u16 languageID)
 }
 
 MapResult<StringView, TableRecord>
-Font::getTable(StringView sTableTag)
+Parser::getTable(StringView sTableTag)
 {
     return m_tableDirectory.mapStringToTableRecord.search(sTableTag);
 }
 
 FWord
-Font::readFWord()
+Parser::readFWord()
 {
     return m_bin.read16Rev();
 }
 
 void
-Font::readHeadTable()
+Parser::readHeadTable()
 {
     const u32 savedPos = m_bin.m_pos;
     defer(m_bin.m_pos = savedPos);
@@ -176,7 +176,7 @@ Font::readHeadTable()
 }
 
 void
-Font::readCmapFormat4()
+Parser::readCmapFormat4()
 {
     u32 savedPos = m_bin.m_pos;
     defer(m_bin.m_pos = savedPos);
@@ -239,7 +239,7 @@ Font::readCmapFormat4()
 }
 
 void
-Font::readCmap(u32 offset)
+Parser::readCmap(u32 offset)
 {
     u32 savedPos = m_bin.m_pos;
     defer(m_bin.m_pos = savedPos);
@@ -265,7 +265,7 @@ Font::readCmap(u32 offset)
 }
 
 void
-Font::readCmapTable()
+Parser::readCmapTable()
 {
     const u32 savedPos = m_bin.m_pos;
     defer(m_bin.m_pos = savedPos);
@@ -335,7 +335,7 @@ Font::readCmapTable()
 }
 
 u32
-Font::getGlyphOffset(u32 idx)
+Parser::getGlyphOffset(u32 idx)
 {
     const ssize savedPos = m_bin.m_pos;
     defer(m_bin.m_pos = savedPos);
@@ -364,14 +364,14 @@ Font::getGlyphOffset(u32 idx)
 }
 
 void
-Font::readCompoundGlyph(Glyph*)
+Parser::readCompoundGlyph(Glyph*)
 {
     // TODO:
     LOG_WARN("ignoring compound glyph...\n");
 }
 
 void
-Font::readSimpleGlyph(Glyph* g)
+Parser::readSimpleGlyph(Glyph* g)
 {
     auto& sg = g->uGlyph.simple;
 
@@ -440,7 +440,7 @@ Font::readSimpleGlyph(Glyph* g)
 }
 
 u32
-Font::getGlyphIdx(u16 code)
+Parser::getGlyphIdx(u16 code)
 {
     auto& c = m_cmapF4;
 
@@ -476,7 +476,7 @@ Font::getGlyphIdx(u16 code)
 }
 
 Glyph*
-Font::readGlyph(u32 code)
+Parser::readGlyph(u32 code)
 {
     const ssize savedPos = m_bin.m_pos;
     defer(m_bin.m_pos = savedPos);
@@ -520,7 +520,7 @@ Font::readGlyph(u32 code)
 };
 
 void
-Font::printGlyphDBG(const Glyph& g, bool bNormalize)
+Parser::printGlyphDBG(const Glyph& g, bool bNormalize)
 {
     auto& sg = g.uGlyph.simple;
     COUT("xMin: {}, yMin: {}, xMax: {}, yMax: {}\n", g.xMin, g.yMin, g.xMax, g.yMax);
@@ -556,7 +556,7 @@ Font::printGlyphDBG(const Glyph& g, bool bNormalize)
 }
 
 bool
-Font::parse2()
+Parser::parse2()
 {
     auto& td = m_tableDirectory;
 
@@ -646,7 +646,7 @@ Font::parse2()
 }
 
 void
-Font::destroy()
+Parser::destroy()
 {
     // TODO:
 }

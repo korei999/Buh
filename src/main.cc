@@ -74,7 +74,7 @@ main(const int argc, const char* const* argv)
 
     if (!s_ntsFontPath)
     {
-        new(&app::g_font) ttf::Font {StdAllocator::inst(), StringView {
+        new(&app::g_font) ttf::Parser {StdAllocator::inst(), StringView {
             (char*)LiberationMono_Regular_ttf, LiberationMono_Regular_ttf_len
         }};
 
@@ -93,7 +93,7 @@ main(const int argc, const char* const* argv)
             return 1;
         }
 
-        new(&app::g_font) ttf::Font {StdAllocator::inst(), sFile};
+        new(&app::g_font) ttf::Parser {StdAllocator::inst(), sFile};
         if (!app::g_font)
         {
             print::err("failed to parse the font\n");

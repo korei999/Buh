@@ -28,7 +28,7 @@ struct BufferAllocator : public IAllocator
 
     template<typename T, ssize N>
     BufferAllocator(T (&aMem)[N]) noexcept
-        : m_pMemBuffer(reinterpret_cast<u8*>(aMem)),
+        : m_pMemBuffer(static_cast<u8*>(aMem)),
           m_cap(N * sizeof(T)) {}
 
     template<typename T>

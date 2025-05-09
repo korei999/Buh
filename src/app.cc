@@ -14,7 +14,7 @@ bool g_bRunning {};
 
 wayland::Client g_wlClient {};
 
-ttf::Font g_font {};
+ttf::Parser g_font {};
 ttf::Rasterizer g_rasterizer {};
 
 static thread_local u8* stl_pScratchMem;

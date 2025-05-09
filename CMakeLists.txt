@@ -211,7 +211,7 @@ add_executable(
     src/frame.cc
     src/Image.cc
 
-    src/ttf/Font.cc
+    src/ttf/Parser.cc
     src/ttf/Rasterizer.cc
 
     src/wayland/Client.cc

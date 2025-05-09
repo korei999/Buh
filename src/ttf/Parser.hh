@@ -7,7 +7,7 @@
 namespace ttf
 {
 
-struct Font
+struct Parser
 {
     adt::IAllocator* m_pAlloc {};
     adt::StringView m_svFile {};
@@ -25,8 +25,8 @@ struct Font
 
     /* */
 
-    Font() = default;
-    Font(adt::IAllocator* pAlloc, adt::StringView svFile)
+    Parser() = default;
+    Parser(adt::IAllocator* pAlloc, adt::StringView svFile)
         : m_pAlloc(pAlloc), m_svFile(svFile), m_bin(m_svFile)
     {
         m_bParsed = parse();

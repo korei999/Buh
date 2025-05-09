@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ttf/Font.hh"
+#include "ttf/Parser.hh"
 #include "ttf/Rasterizer.hh"
 #include "wayland/Client.hh"
 
@@ -17,7 +17,7 @@ extern bool g_bRunning;
 
 extern wayland::Client g_wlClient;
 
-extern ttf::Font g_font;
+extern ttf::Parser g_font;
 extern ttf::Rasterizer g_rasterizer;
 
 extern thread_local adt::ScratchBuffer gtl_scratch;

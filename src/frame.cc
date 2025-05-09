@@ -3,11 +3,11 @@
 #include "app.hh"
 #include "config.hh"
 
-#include <poll.h>
-
 #include "adt/logs.hh"
 #include "adt/file.hh"
 #include "adt/simd.hh"
+
+#include <poll.h>
 
 using namespace adt;
 
@@ -105,8 +105,7 @@ run()
                                     if (val == 0) continue;
 
                                     auto& rDest = reinterpret_cast<ImagePixelARGBle&>(spBuffer(
-                                        x,
-                                        rbar.m_height - 1 - y - yOff
+                                        x, rbar.m_height - 1 - y - yOff
                                     ));
 
                                     if (val == 255) rDest.data = color;

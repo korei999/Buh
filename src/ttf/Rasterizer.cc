@@ -1,19 +1,25 @@
 #include "Rasterizer.hh"
+#include "Parser.hh"
 
-#include "Font.hh"
 #include "app.hh"
 
 #include "adt/math.hh"
 #include "adt/BufferAllocator.hh"
 #include "adt/Array.hh"
 #include "adt/logs.hh"
+#include "adt/simd.hh"
 
 using namespace adt;
 
 namespace ttf
 {
 
-struct CurveEndIdx { u16 aIdxs[8]; };
+struct CurveEndIdx
+{
+    static constexpr int CAP = 8;
+
+    i16 aIdxs[CAP];
+};
 
 struct PointOnCurve
 {
@@ -109,8 +115,8 @@ static Vec<PointOnCurve>
 makeItCurvy(IAllocator* pAlloc, const Vec<PointOnCurve>& aNonCurvyPoints, CurveEndIdx* pEndIdxs, int nTessellations)
 {
     Vec<PointOnCurve> aNew(pAlloc, aNonCurvyPoints.size());
-    utils::fill(pEndIdxs->aIdxs, NPOS16, utils::size(pEndIdxs->aIdxs));
-    u16 endIdx = 0;
+    simd::i16Fillx8(pEndIdxs->aIdxs, -1);
+    i16 endIdx = 0;
 
     ssize firstInCurveIdx = 0;
     bool bPrevOnCurve = true;
@@ -176,20 +182,19 @@ makeItCurvy(IAllocator* pAlloc, const Vec<PointOnCurve>& aNonCurvyPoints, CurveE
 }
 
 void
-Rasterizer::rasterizeGlyph(const Font& font, const Glyph& glyph, int xOff, int yOff)
+Rasterizer::rasterizeGlyph(const Parser& font, const Glyph& glyph, int xOff, int yOff)
 {
-    Span spMem = app::gtl_scratch.allMem<PointOnCurve>();
-    BufferAllocator allo(reinterpret_cast<u8*>(spMem.data()), spMem.size() * sizeof(PointOnCurve));
+    BufferAllocator allo(app::gtl_scratch.allMem<PointOnCurve>());
 
     CurveEndIdx endIdxs {};
     Vec<PointOnCurve> vCurvyPoints = makeItCurvy(
         &allo, pointsWithMissingOnCurve(&allo, glyph), &endIdxs, 6
     );
 
-    f32 xMax = font.m_head.xMax;
-    f32 xMin = font.m_head.xMin;
-    f32 yMax = font.m_head.yMax;
-    f32 yMin = font.m_head.yMin;
+    const f32 xMax = font.m_head.xMax;
+    const f32 xMin = font.m_head.xMin;
+    const f32 yMax = font.m_head.yMax;
+    const f32 yMin = font.m_head.yMin;
 
     Array<f32, 64> aIntersections {};
     Span2D<u8> spAtlas = m_altas.spanMono();
@@ -228,11 +233,11 @@ Rasterizer::rasterizeGlyph(const Font& font, const Glyph& glyph, int xOff, int y
             const f32 dx = x1 - x0;
             const f32 dy = y1 - y0;
 
-            if (math::eq(dy, 0.0f)) continue;
+            if (dy == 0.0f) continue;
 
             f32 intersection = -1.0f;
 
-            if (math::eq(dx, 0.0f)) intersection = x1;
+            if (dx == 0.0f) intersection = x1;
             else intersection = (scanline - y1)*(dx/dy) + x1;
 
             if (aIntersections.size() >= aIntersections.cap()) continue;
@@ -244,7 +249,7 @@ Rasterizer::rasterizeGlyph(const Font& font, const Glyph& glyph, int xOff, int y
         {
             sort::insertion(&aIntersections);
 
-            for (ssize intIdx = 0; intIdx < aIntersections.size(); intIdx += 2)
+            for (ssize intIdx = 0; intIdx + 1 < aIntersections.size(); intIdx += 2)
             {
                 const f32 start = aIntersections[intIdx];
                 const int startIdx = start;
@@ -254,25 +259,25 @@ Rasterizer::rasterizeGlyph(const Font& font, const Glyph& glyph, int xOff, int y
                 const int endIdx = end;
                 const f32 endCovered = end - endIdx;
 
-                if (startIdx >= 0)
-                    spAtlas(xOff + startIdx, yOff + row) = 255.0f * startCovered;
-                if (startIdx != endIdx)
-                    spAtlas(xOff + endIdx, yOff + row) = 255.0f * endCovered;
-
-                // if (startIdx >= 0)
-                //     spAtlas(xOff + startIdx, yOff + row) = utils::clamp(255.0f * startCovered, 0.0f, 255.0f);
-                // if (startIdx != endIdx)
-                //     spAtlas(xOff + endIdx, yOff + row) = utils::clamp(255.0f * endCovered, 0.0f, 255.0f);
-
                 for (int col = startIdx + 1; col < endIdx; ++col)
-                    if (col >= 0) spAtlas(xOff + col, yOff + row) = 255;
+                    spAtlas(xOff + col, yOff + row) = 255;
+
+                if (startIdx == endIdx)
+                {
+                    spAtlas(xOff + startIdx, yOff + row) += 255.0f * startCovered;
+                }
+                else
+                {
+                    spAtlas(xOff + startIdx, yOff + row) += 255.0f * startCovered;
+                    spAtlas(xOff + endIdx, yOff + row) += 255.0f * endCovered;
+                }
             }
         }
     }
 }
 
 void
-Rasterizer::rasterizeAscii(IAllocator* pAlloc, Font* pFont, f32 scale)
+Rasterizer::rasterizeAscii(IAllocator* pAlloc, Parser* pFont, f32 scale)
 {
     if (!pAlloc)
     {
