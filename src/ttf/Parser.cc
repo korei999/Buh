@@ -364,11 +364,12 @@ Parser::getGlyphOffset(u32 idx)
     return offset + fGlyf.value().offset;
 }
 
-void
+bool
 Parser::readCompoundGlyph(Glyph*)
 {
     // TODO:
     LOG_WARN("ignoring compound glyph...\n");
+    return false;
 }
 
 void
@@ -515,8 +516,15 @@ Parser::readGlyph(u32 code)
 
     ADT_ASSERT(newGlyph.numberOfContours >= -1, " ");
 
-    if (newGlyph.numberOfContours == -1) readCompoundGlyph(&newGlyph);
-    else readSimpleGlyph(&newGlyph);
+    if (newGlyph.numberOfContours == -1)
+    {
+        if(!readCompoundGlyph(&newGlyph))
+            return nullptr;
+    }
+    else
+    {
+        readSimpleGlyph(&newGlyph);
+    }
 
     /* cache everything */
     return &m_mapOffsetToGlyph.insert(m_pAlloc, offset, newGlyph).value();

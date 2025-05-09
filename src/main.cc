@@ -6,6 +6,8 @@
 #include "adt/file.hh"
 #include "adt/StdAllocator.hh"
 
+#include <clocale>
+
 using namespace adt;
 
 static int s_barHeight = 24;
@@ -56,6 +58,8 @@ int
 main(const int argc, const char* const* argv)
 {
     app::g_argc = argc, app::g_argv = argv;
+
+    setlocale(LC_ALL, "");
 
     parseArgs(argc, argv);
 

@@ -51,7 +51,7 @@ private:
     adt::u32 getGlyphOffset(adt::u32 idx);
     adt::u32 getGlyphIdx(adt::u16 code);
     FWord readFWord();
-    void readCompoundGlyph(Glyph* g);
+    bool readCompoundGlyph(Glyph* g);
     void readSimpleGlyph(Glyph* g);
 };
 

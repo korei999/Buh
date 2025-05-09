@@ -6,6 +6,7 @@
 #include "adt/logs.hh"
 #include "adt/file.hh"
 #include "adt/simd.hh"
+#include "adt/StdAllocator.hh"
 
 #include <poll.h>
 
@@ -22,7 +23,7 @@ run()
     wl_display* pDisplay = app::g_wlClient.m_pDisplay;
     pollfd pfd {.fd = wl_display_get_fd(pDisplay), .events = POLLIN, .revents {}};
 
-    const ttf::Rasterizer& rast = app::g_rasterizer;
+    ttf::Rasterizer& rast = app::g_rasterizer;
     const int scale = static_cast<int>(rast.m_scale);
     const int xScale = scale * ttf::Rasterizer::X_STEP;
 
@@ -84,14 +85,21 @@ run()
                         const u8 penG = (color >> 8) & 0xff;
                         const u8 penB = (color >> 0) & 0xff;
 
+                        // LOG_GOOD("word: '{}'\n", sv);
+                        // for (const wchar_t ch : StringGlyphIt(sv))
+                        //     CERR("{}", ch);
+                        // CERR("\n");
+
                         for (const wchar_t ch : StringGlyphIt(sv))
                         {
                             defer( thisXOff += xScale );
     
                             if (ch == L' ') continue;
     
-                            const MapResult mRes = rast.searchGlyph(ch);
-                            if (mRes.eStatus == MAP_RESULT_STATUS::NOT_FOUND) continue;
+                            // const MapResult mRes = rast.searchGlyphAtlasUV(ch);
+                            // const MapResult mRes = rast.readGlyph(StdAllocator::inst(), &app::g_font, L'я');
+                            const MapResult mRes = rast.readGlyph(StdAllocator::inst(), &app::g_font, ch);
+                            if (!mRes) continue;
     
                             const auto [u, v] = mRes.value();
     
@@ -112,12 +120,11 @@ run()
 
                                     /* lerp */
                                     const f32 t = val / 255.0f;
-                                    const f32 oneMinusT = 1.0f - t;
 
                                     rDest.a = 0xff;
-                                    rDest.r = (u8)(oneMinusT * rDest.r + t * penR);
-                                    rDest.g = (u8)(oneMinusT * rDest.g + t * penG);
-                                    rDest.b = (u8)(oneMinusT * rDest.b + t * penB);
+                                    rDest.r = (u8)((1.0f - t) * rDest.r + t * penR);
+                                    rDest.g = (u8)((1.0f - t) * rDest.g + t * penG);
+                                    rDest.b = (u8)((1.0f - t) * rDest.b + t * penB);
                                 }
                             }
                         }

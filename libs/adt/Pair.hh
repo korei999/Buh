@@ -1,7 +1,8 @@
 #pragma once
 
-#include "print.hh"
 #include "PairDecl.hh"
+
+#include "print.hh"
 
 namespace adt
 {

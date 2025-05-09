@@ -114,7 +114,7 @@ insertPoints(
 static Vec<PointOnCurve>
 makeItCurvy(IAllocator* pAlloc, const Vec<PointOnCurve>& aNonCurvyPoints, CurveEndIdx* pEndIdxs, int nTessellations)
 {
-    Vec<PointOnCurve> aNew(pAlloc, aNonCurvyPoints.size());
+    Vec<PointOnCurve> aNew {pAlloc, aNonCurvyPoints.size()};
     simd::i16Fillx8(pEndIdxs->aIdxs, -1);
     i16 endIdx = 0;
 
@@ -184,11 +184,11 @@ makeItCurvy(IAllocator* pAlloc, const Vec<PointOnCurve>& aNonCurvyPoints, CurveE
 void
 Rasterizer::rasterizeGlyph(const Parser& font, const Glyph& glyph, int xOff, int yOff)
 {
-    BufferAllocator allo(app::gtl_scratch.allMem<PointOnCurve>());
+    BufferAllocator buff {app::gtl_scratch.allMem<u8>()};
 
     CurveEndIdx endIdxs {};
     Vec<PointOnCurve> vCurvyPoints = makeItCurvy(
-        &allo, pointsWithMissingOnCurve(&allo, glyph), &endIdxs, 6
+        &buff, pointsWithMissingOnCurve(&buff, glyph), &endIdxs, 6
     );
 
     const f32 xMax = font.m_head.xMax;
@@ -230,9 +230,8 @@ Rasterizer::rasterizeGlyph(const Parser& font, const Glyph& glyph, int xOff, int
              * |/(x0, y0)
              * +------------ */
 
-            const f32 dy = y1 - y0;
             const f32 dx = x1 - x0;
-
+            const f32 dy = y1 - y0;
             const f32 interX = (scanline - y1)/dy * dx + x1;
 
             aIntersections.push(interX);
@@ -287,36 +286,37 @@ Rasterizer::rasterizeAsciiIntoAltas(IAllocator* pAlloc, Parser* pFont, f32 scale
     const int iScale = std::round(scale);
     m_scale = scale;
 
-    ssize nSquares = 10;
-    ssize size = math::sq(scale) * math::sq(nSquares);
+    constexpr ssize nSquares = 10;
+    m_nSquares = nSquares;
+    const ssize size = math::sq(scale) * math::sq(nSquares);
+    m_altasAllocSize = size;
 
     m_altas.m_eType = Image::TYPE::MONO;
     m_altas.m_uData.pMono = pAlloc->zallocV<u8>(size);
     m_altas.m_width = nSquares * scale;
     m_altas.m_height = nSquares * scale;
 
-    i16 xOff = 0;
-    i16 yOff = 0;
     const i16 xStep = iScale * X_STEP;
 
-    Span<u8> spMem = app::gtl_scratch.allMem<u8>();
-    BufferAllocator arena {spMem};
+    BufferAllocator buff {app::gtl_scratch.allMem<u8>()};
 
     try
     {
         for (u32 ch = '!'; ch <= '~'; ++ch)
         {
-            m_mapCodeToUV.insert(pAlloc, ch, {xOff, yOff});
-
             Glyph* pGlyph = pFont->readGlyph(ch);
             if (!pGlyph) continue;
 
+            m_mapCodeToUV.insert(pAlloc, ch, {m_xOffAtlas, m_yOffAtlas});
+
+            const i16 xOff = m_xOffAtlas;
+            const i16 yOff = m_yOffAtlas;
             auto clRasterize = [this, pFont, pGlyph, xOff, yOff]
             {
                 rasterizeGlyph(*pFont, *pGlyph, xOff, yOff);
             };
 
-            auto* pCl = arena.alloc<decltype(clRasterize)>(clRasterize);
+            auto* pCl = buff.alloc<decltype(clRasterize)>(clRasterize);
 
             /* no data dependency between altas regions */
             app::g_threadPool.addRetry(+[](void* pArg) -> THREAD_STATUS
@@ -337,10 +337,10 @@ Rasterizer::rasterizeAsciiIntoAltas(IAllocator* pAlloc, Parser* pFont, f32 scale
                 pCl
             );
 
-            if ((xOff += xStep) >= (nSquares*iScale) - xStep)
+            if ((m_xOffAtlas += xStep) >= (nSquares*iScale) - xStep)
             {
-                xOff = 0;
-                if ((yOff += iScale) >= (nSquares*iScale) - iScale)
+                m_xOffAtlas = 0;
+                if ((m_yOffAtlas += iScale) >= (nSquares*iScale) - iScale)
                     break;
             }
         }
@@ -351,6 +351,47 @@ Rasterizer::rasterizeAsciiIntoAltas(IAllocator* pAlloc, Parser* pFont, f32 scale
     }
 
     app::g_threadPool.wait();
+}
+
+MapResult<u32, Pair<i16, i16>>
+Rasterizer::readGlyph(IAllocator* pAlloc, Parser* pFont, u32 code)
+{
+    auto mFound = m_mapCodeToUV.search(code);
+    if (mFound) return mFound;
+
+    Glyph* pGlyph = pFont->readGlyph(code);
+    if (!pGlyph)
+    {
+        LOG_BAD("failed to find glyph for '{}'({})\n", wchar_t(code), code);
+        return {};
+    }
+
+    const int iScale = std::round(m_scale);
+    const i16 xStep = iScale * X_STEP;
+
+    rasterizeGlyph(*pFont, *pGlyph, m_xOffAtlas, m_yOffAtlas);
+    auto mapRes = m_mapCodeToUV.insert(pAlloc, code, {m_xOffAtlas, m_yOffAtlas});
+
+    if ((m_xOffAtlas += xStep) >= (m_nSquares*iScale) - xStep)
+    {
+        m_xOffAtlas = 0;
+        if ((m_yOffAtlas += iScale) >= (m_nSquares*iScale) - iScale)
+        {
+            m_altas.m_uData.pMono = pAlloc->reallocV<u8>(
+                m_altas.m_uData.pMono,
+                m_altasAllocSize,
+                m_altasAllocSize * 2
+            );
+
+            m_nSquares *= 2;
+            m_altasAllocSize *= 2;
+
+            m_altas.m_width = m_nSquares * m_scale;
+            m_altas.m_height = m_nSquares * m_scale;
+        }
+    }
+
+    return mapRes;
 }
 
 void
