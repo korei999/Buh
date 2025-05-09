@@ -368,7 +368,7 @@ bool
 Parser::readCompoundGlyph(Glyph*)
 {
     // TODO:
-    LOG_WARN("ignoring compound glyph...\n");
+    // LOG_WARN("ignoring compound glyph...\n");
     return false;
 }
 

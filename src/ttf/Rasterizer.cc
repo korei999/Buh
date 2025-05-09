@@ -197,7 +197,7 @@ Rasterizer::rasterizeGlyph(const Parser& font, const Glyph& glyph, int xOff, int
     const f32 yMin = font.m_head.yMin;
 
     Array<f32, 64> aIntersections {};
-    Span2D<u8> spAtlas = m_altas.spanMono();
+    Span2D<u8> spAtlas = m_atlas.spanMono();
 
     const f32 hScale = static_cast<f32>(m_scale) / static_cast<f32>(xMax - xMin);
     const f32 vScale = static_cast<f32>(m_scale) / static_cast<f32>(yMax - yMin);
@@ -291,10 +291,10 @@ Rasterizer::rasterizeAsciiIntoAltas(IAllocator* pAlloc, Parser* pFont, f32 scale
 
     const ssize size = width * scale * height * scale;;
 
-    m_altas.m_eType = Image::TYPE::MONO;
-    m_altas.m_uData.pMono = pAlloc->zallocV<u8>(size);
-    m_altas.m_width = width * scale;
-    m_altas.m_height = height * scale;
+    m_atlas.m_eType = Image::TYPE::MONO;
+    m_atlas.m_uData.pMono = pAlloc->zallocV<u8>(size);
+    m_atlas.m_width = width * scale;
+    m_atlas.m_height = height * scale;
 
     const i16 xStep = iScale * X_STEP;
 
@@ -337,11 +337,13 @@ Rasterizer::rasterizeAsciiIntoAltas(IAllocator* pAlloc, Parser* pFont, f32 scale
                 pCl
             );
 
-            if ((m_xOffAtlas += xStep) >= (m_altas.m_width) - xStep)
+            if ((m_xOffAtlas += xStep) > (m_atlas.m_width) - xStep)
             {
                 m_xOffAtlas = 0;
-                if ((m_yOffAtlas += iScale) >= (m_altas.m_height) - iScale)
-                    break;
+                if ((m_yOffAtlas += iScale) > (m_atlas.m_height) - iScale)
+                {
+                    ADT_ASSERT(false, "unhandled");
+                }
             }
         }
     }
@@ -362,28 +364,30 @@ Rasterizer::readGlyph(IAllocator* pAlloc, Parser* pFont, u32 code)
     Glyph* pGlyph = pFont->readGlyph(code);
     if (!pGlyph)
     {
-        LOG_BAD("failed to find glyph for '{}'({})\n", wchar_t(code), code);
+        // LOG_BAD("failed to find glyph for '{}'({})\n", wchar_t(code), code);
         return {};
     }
 
-    const int iScale = std::round(m_scale);
-    const i16 xStep = iScale * X_STEP;
+    const int yStep = std::round(m_scale);
+    const i16 xStep = yStep * X_STEP;
 
     rasterizeGlyph(*pFont, *pGlyph, m_xOffAtlas, m_yOffAtlas);
     auto mapRes = m_mapCodeToUV.insert(pAlloc, code, {m_xOffAtlas, m_yOffAtlas});
 
-    if ((m_xOffAtlas += xStep) >= (m_altas.m_width) - xStep)
+    if ((m_xOffAtlas += xStep) > (m_atlas.m_width) - xStep)
     {
         m_xOffAtlas = 0;
-        if ((m_yOffAtlas += iScale) >= (m_altas.m_height) - iScale)
+        if ((m_yOffAtlas += yStep) > (m_atlas.m_height) - yStep)
         {
-            m_altas.m_uData.pMono = pAlloc->reallocV<u8>(
-                m_altas.m_uData.pMono,
-                m_altas.m_width * m_altas.m_height,
-                m_altas.m_width * (m_altas.m_height*2)
+            LOG_BAD("REALLOC: yOff: {}, height: {}\n", m_yOffAtlas, m_atlas.m_height - yStep);
+
+            m_atlas.m_uData.pMono = pAlloc->reallocV<u8>(
+                m_atlas.m_uData.pMono,
+                m_atlas.m_width * m_atlas.m_height,
+                m_atlas.m_width * (m_atlas.m_height*2)
             );
 
-            m_altas.m_height *= 2;
+            m_atlas.m_height *= 2;
         }
     }
 
@@ -393,7 +397,7 @@ Rasterizer::readGlyph(IAllocator* pAlloc, Parser* pFont, u32 code)
 void
 Rasterizer::destroy(adt::IAllocator* pAlloc)
 {
-    pAlloc->free(m_altas.m_uData.pMono);
+    pAlloc->free(m_atlas.m_uData.pMono);
     m_mapCodeToUV.destroy(pAlloc);
     *this = {};
 }

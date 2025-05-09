@@ -48,56 +48,56 @@ struct Image
     adt::Span2D<ImagePixelRGBA>
     spanRGBA()
     {
-        ADT_ASSERT(m_eType == TYPE::RGBA, " ");
+        ADT_ASSERT(m_eType == TYPE::RGBA, "");
         return {m_uData.pRGBA, m_width, m_height, m_width};
     }
 
     const adt::Span2D<ImagePixelRGBA>
     spanRGBA() const
     {
-        ADT_ASSERT(m_eType == TYPE::RGBA, " ");
+        ADT_ASSERT(m_eType == TYPE::RGBA, "");
         return {m_uData.pRGBA, m_width, m_height, m_width};
     }
 
     adt::Span2D<ImagePixelRGB>
     spanRGB()
     {
-        ADT_ASSERT(m_eType == TYPE::RGB, " ");
+        ADT_ASSERT(m_eType == TYPE::RGB, "");
         return {m_uData.pRGB, m_width, m_height, m_width};
     }
 
     const adt::Span2D<ImagePixelRGB>
     spanRGB() const
     {
-        ADT_ASSERT(m_eType == TYPE::RGB, " ");
+        ADT_ASSERT(m_eType == TYPE::RGB, "");
         return {m_uData.pRGB, m_width, m_height, m_width};
     }
 
     adt::Span2D<adt::u8>
     spanMono()
     {
-        ADT_ASSERT(m_eType == TYPE::MONO, " ");
+        ADT_ASSERT(m_eType == TYPE::MONO, "");
         return {m_uData.pMono, m_width, m_height, m_width};
     }
 
     const adt::Span2D<adt::u8>
     spanMono() const
     {
-        ADT_ASSERT(m_eType == TYPE::MONO, " ");
+        ADT_ASSERT(m_eType == TYPE::MONO, "");
         return {m_uData.pMono, m_width, m_height, m_width};
     }
 
     adt::Span2D<ImagePixelARGBle>
     spanARGBle()
     {
-        ADT_ASSERT(m_eType == TYPE::ARGB_LE, " ");
+        ADT_ASSERT(m_eType == TYPE::ARGB_LE, "");
         return {m_uData.pARGBle, m_width, m_height, m_width};
     }
 
     const adt::Span2D<ImagePixelARGBle>
     spanARGBle() const
     {
-        ADT_ASSERT(m_eType == TYPE::ARGB_LE, " ");
+        ADT_ASSERT(m_eType == TYPE::ARGB_LE, "");
         return {m_uData.pARGBle, m_width, m_height, m_width};
     }
 };
