@@ -91,7 +91,7 @@ run()
     
                             if (ch == L' ') continue;
     
-                            const MapResult mRes = rast.addOrSeachGlyph(&app::g_threadPool.scratch(), StdAllocator::inst(), &app::g_font, ch);
+                            const MapResult mRes = rast.addOrSearchGlyph(&app::g_threadPool.scratch(), StdAllocator::inst(), &app::g_font, ch);
                             if (!mRes) continue;
     
                             const auto [u, v] = mRes.value();
