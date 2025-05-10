@@ -253,7 +253,7 @@ ThreadPool<QUEUE_SIZE>::add(Task task)
 }
 
 /* ThreadPool with ScratchBuffers created for each thread.
- * Any thread can access its buffer with `threadPool.scratch()`. */
+ * Any thread can access its own thread local buffer with `threadPool.scratch()`. */
 template<ssize QUEUE_SIZE>
 struct ThreadPoolWithMemory : ThreadPool<QUEUE_SIZE>, IThreadPoolWithMemory
 {

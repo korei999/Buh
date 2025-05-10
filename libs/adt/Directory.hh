@@ -30,10 +30,10 @@
 
 #endif
 
-#ifdef ADT_USE_DIRENT
-
 namespace adt
 {
+
+#ifdef ADT_USE_DIRENT
 
 struct Directory
 {

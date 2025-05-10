@@ -7,6 +7,7 @@
 #include "adt/file.hh"
 #include "adt/simd.hh"
 #include "adt/StdAllocator.hh"
+#include "adt/math.hh"
 
 #include <poll.h>
 
@@ -115,15 +116,12 @@ run()
                                             x, rbar.m_height - 1 - y - yOff
                                         ));
 
-                                        if (val == 255) rDest.data = color;
-
-                                        /* lerp */
                                         const f32 t = val / 255.0f;
 
                                         rDest.a = 0xff;
-                                        rDest.r = (u8)((1.0f - t) * rDest.r + t * penR);
-                                        rDest.g = (u8)((1.0f - t) * rDest.g + t * penG);
-                                        rDest.b = (u8)((1.0f - t) * rDest.b + t * penB);
+                                        rDest.r = (u8)(math::lerp(rDest.r, penR, t));
+                                        rDest.g = (u8)(math::lerp(rDest.g, penG, t));
+                                        rDest.b = (u8)(math::lerp(rDest.b, penB, t));
                                     }
                                 }
                             }

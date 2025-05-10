@@ -113,6 +113,15 @@ template<typename T>
 inline void
 SList<T>::remove(Node* pPrev, Node* pNode)
 {
+    if (pNode == m_pHead)
+    {
+        m_pHead = pNode->pNext;
+    }
+    else
+    {
+        ADT_ASSERT(pPrev != nullptr, "");
+        pPrev->pNext = pNode->pNext;
+    }
 }
 
 } /* namespace adt */
