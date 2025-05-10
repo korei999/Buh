@@ -4,7 +4,6 @@
 #include "ttf/Rasterizer.hh"
 #include "wayland/Client.hh"
 
-#include "adt/ScratchBuffer.hh"
 #include "adt/ThreadPool.hh"
 
 namespace app
@@ -20,10 +19,6 @@ extern wayland::Client g_wlClient;
 extern ttf::Parser g_font;
 extern ttf::Rasterizer g_rasterizer;
 
-extern thread_local adt::ScratchBuffer gtl_scratch;
-extern adt::ThreadPool<128> g_threadPool;
-
-void allocScratchForThisThread(adt::ssize size);
-void destroyScratchForThisThread();
+extern adt::ThreadPoolWithMemory<128> g_threadPool;
 
 } /* namespace app */

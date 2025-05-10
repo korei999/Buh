@@ -114,7 +114,7 @@ struct String : public StringView
 
     void destroy(IAllocator* pAlloc);
     void replaceWith(IAllocator* pAlloc, StringView svWith);
-    String release(); /* return this String and set to zero */
+    String release(); /* return this String resource and set to zero */
 };
 
 template<int SIZE>

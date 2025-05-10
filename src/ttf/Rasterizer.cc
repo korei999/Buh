@@ -1,8 +1,6 @@
 #include "Rasterizer.hh"
 #include "Parser.hh"
 
-#include "app.hh"
-
 #include "adt/math.hh"
 #include "adt/BufferAllocator.hh"
 #include "adt/Array.hh"
@@ -32,6 +30,12 @@ struct PointOnCurve
 Vec<PointOnCurve>
 pointsWithMissingOnCurve(IAllocator* pAlloc, const Glyph& g)
 {
+    if (g.numberOfContours == -1)
+    {
+        LOG_BAD("compound glyph (numberOfContours: '{}')\n", g.numberOfContours);
+        return {};
+    }
+
     const auto& aGlyphPoints = g.uGlyph.simple.vPoints;
     const u32 size = aGlyphPoints.size();
 
@@ -182,9 +186,10 @@ makeItCurvy(IAllocator* pAlloc, const Vec<PointOnCurve>& aNonCurvyPoints, CurveE
 }
 
 void
-Rasterizer::rasterizeGlyph(const Parser& font, const Glyph& glyph, int xOff, int yOff)
+Rasterizer::rasterizeGlyph(ScratchBuffer* pScratch, const Parser& font, const Glyph& glyph, int xOff, int yOff)
 {
-    BufferAllocator buff {app::gtl_scratch.allMem<u8>()};
+    // BufferAllocator buff {app::g_threadPool.gtl_scratch.allMem<u8>()};
+    BufferAllocator buff {pScratch->allMem<u8>()};
 
     CurveEndIdx endIdxs {};
     Vec<PointOnCurve> vCurvyPoints = makeItCurvy(
@@ -268,8 +273,55 @@ Rasterizer::rasterizeGlyph(const Parser& font, const Glyph& glyph, int xOff, int
     }
 }
 
+MapResult<u32, Pair<i16, i16>>
+Rasterizer::addOrSeachGlyph(ScratchBuffer* pScratch, IAllocator* pAlloc, Parser* pFont, u32 code)
+{
+    auto mFound = m_mapCodeToUV.search(code);
+    if (mFound) return mFound;
+
+    Glyph* pGlyph = pFont->readGlyph(code);
+    if (!pGlyph)
+    {
+        LOG_BAD("failed to find glyph for '{}'({})\n", wchar_t(code), code);
+        return {};
+    }
+
+    const int yStep = std::round(m_scale);
+    const i16 xStep = yStep * X_STEP;
+
+    rasterizeGlyph(pScratch, *pFont, *pGlyph, m_xOffAtlas, m_yOffAtlas);
+    auto mapRes = m_mapCodeToUV.insert(pAlloc, code, {m_xOffAtlas, m_yOffAtlas});
+
+    if ((m_xOffAtlas += xStep) > (m_atlas.m_width) - xStep)
+    {
+        m_xOffAtlas = 0;
+        if ((m_yOffAtlas += yStep) > (m_atlas.m_height) - yStep)
+        {
+            LOG_BAD("REALLOC: yOff: {}, height: {}\n", m_yOffAtlas, m_atlas.m_height - yStep);
+
+            m_atlas.m_uData.pMono = pAlloc->reallocV<u8>(
+                m_atlas.m_uData.pMono,
+                m_atlas.m_width * m_atlas.m_height,
+                m_atlas.m_width * (m_atlas.m_height*2)
+            );
+
+            m_atlas.m_height *= 2;
+        }
+    }
+
+    return mapRes;
+}
+
 void
-Rasterizer::rasterizeAsciiIntoAltas(IAllocator* pAlloc, Parser* pFont, f32 scale)
+Rasterizer::destroy(adt::IAllocator* pAlloc)
+{
+    pAlloc->free(m_atlas.m_uData.pMono);
+    m_mapCodeToUV.destroy(pAlloc);
+    *this = {};
+}
+
+void
+Rasterizer::rasterizeAscii(IAllocator* pAlloc, Parser* pFont, IThreadPoolWithMemory* pThreadPool, f32 scale)
 {
     if (!pAlloc)
     {
@@ -298,7 +350,7 @@ Rasterizer::rasterizeAsciiIntoAltas(IAllocator* pAlloc, Parser* pFont, f32 scale
 
     const i16 xStep = iScale * X_STEP;
 
-    BufferAllocator buff {app::gtl_scratch.allMem<u8>()};
+    BufferAllocator buff {pThreadPool->scratch().template allMem<u8>()};
 
     try
     {
@@ -311,15 +363,15 @@ Rasterizer::rasterizeAsciiIntoAltas(IAllocator* pAlloc, Parser* pFont, f32 scale
 
             const i16 xOff = m_xOffAtlas;
             const i16 yOff = m_yOffAtlas;
-            auto clRasterize = [this, pFont, pGlyph, xOff, yOff]
+            auto clRasterize = [this, pFont, pGlyph, xOff, yOff, pThreadPool]
             {
-                rasterizeGlyph(*pFont, *pGlyph, xOff, yOff);
+                rasterizeGlyph(&pThreadPool->scratch(), *pFont, *pGlyph, xOff, yOff);
             };
 
             auto* pCl = buff.alloc<decltype(clRasterize)>(clRasterize);
 
             /* no data dependency between altas regions */
-            app::g_threadPool.addRetry(+[](void* pArg) -> THREAD_STATUS
+            pThreadPool->addRetry(+[](void* pArg) -> THREAD_STATUS
                 {
                     auto& task = *static_cast<decltype(clRasterize)*>(pArg);
 
@@ -352,54 +404,7 @@ Rasterizer::rasterizeAsciiIntoAltas(IAllocator* pAlloc, Parser* pFont, f32 scale
         ex.printErrorMsg(stderr);
     }
 
-    app::g_threadPool.wait();
-}
-
-MapResult<u32, Pair<i16, i16>>
-Rasterizer::readGlyph(IAllocator* pAlloc, Parser* pFont, u32 code)
-{
-    auto mFound = m_mapCodeToUV.search(code);
-    if (mFound) return mFound;
-
-    Glyph* pGlyph = pFont->readGlyph(code);
-    if (!pGlyph)
-    {
-        // LOG_BAD("failed to find glyph for '{}'({})\n", wchar_t(code), code);
-        return {};
-    }
-
-    const int yStep = std::round(m_scale);
-    const i16 xStep = yStep * X_STEP;
-
-    rasterizeGlyph(*pFont, *pGlyph, m_xOffAtlas, m_yOffAtlas);
-    auto mapRes = m_mapCodeToUV.insert(pAlloc, code, {m_xOffAtlas, m_yOffAtlas});
-
-    if ((m_xOffAtlas += xStep) > (m_atlas.m_width) - xStep)
-    {
-        m_xOffAtlas = 0;
-        if ((m_yOffAtlas += yStep) > (m_atlas.m_height) - yStep)
-        {
-            LOG_BAD("REALLOC: yOff: {}, height: {}\n", m_yOffAtlas, m_atlas.m_height - yStep);
-
-            m_atlas.m_uData.pMono = pAlloc->reallocV<u8>(
-                m_atlas.m_uData.pMono,
-                m_atlas.m_width * m_atlas.m_height,
-                m_atlas.m_width * (m_atlas.m_height*2)
-            );
-
-            m_atlas.m_height *= 2;
-        }
-    }
-
-    return mapRes;
-}
-
-void
-Rasterizer::destroy(adt::IAllocator* pAlloc)
-{
-    pAlloc->free(m_atlas.m_uData.pMono);
-    m_mapCodeToUV.destroy(pAlloc);
-    *this = {};
+    pThreadPool->wait();
 }
 
 } /* namespace ttf */

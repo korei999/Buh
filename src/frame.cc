@@ -85,15 +85,13 @@ run()
                         const u8 penG = (color >> 8) & 0xff;
                         const u8 penB = (color >> 0) & 0xff;
 
-                        LOG_BAD("BEFORE: '{}'\n", sv);
                         for (const wchar_t ch : StringGlyphIt(sv))
                         {
                             defer( thisXOff += xScale );
     
-                            LOG_BAD("CHAR: '{}'\n", ch);
                             if (ch == L' ') continue;
     
-                            const MapResult mRes = rast.readGlyph(StdAllocator::inst(), &app::g_font, ch);
+                            const MapResult mRes = rast.addOrSeachGlyph(&app::g_threadPool.scratch(), StdAllocator::inst(), &app::g_font, ch);
                             if (!mRes) continue;
     
                             const auto [u, v] = mRes.value();

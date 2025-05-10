@@ -1,15 +1,16 @@
 #pragma once
 
-#include "Thread.hh"
-#include "defer.hh"
-#include "atomic.hh"
 #include "QueueArray.hh"
+#include "ScratchBuffer.hh"
+#include "Thread.hh"
+#include "atomic.hh"
+#include "defer.hh"
+#include "StdAllocator.hh"
 
 namespace adt
 {
 
-template<ssize QUEUE_SIZE>
-struct ThreadPool
+struct IThreadPool
 {
     struct Task
     {
@@ -19,6 +20,44 @@ struct ThreadPool
 
     /* */
 
+    virtual void wait() = 0;
+
+    virtual bool add(Task task) = 0;
+
+    bool add(ThreadFn pfn, void* pArg) { return add({pfn, pArg}); }
+
+    template<typename LAMBDA>
+    bool
+    addLambda(LAMBDA& t)
+    {
+        return add(+[](void* pArg) -> THREAD_STATUS
+            {
+                static_cast<LAMBDA*>(pArg)->operator()();
+                return 0;
+            },
+            (void*)(&t)
+        );
+    }
+
+    template<typename LAMBDA> requires(std::is_rvalue_reference_v<LAMBDA&&>)
+    [[deprecated("rvalue lambdas cause use after free")]] bool addLambda(LAMBDA&& t) = delete;
+
+    void addRetry(Task task) { while (!add(task)); }
+
+    void addRetry(ThreadFn pfn, void* pArg) { while (!add(pfn, pArg)); }
+
+    template<typename LAMBDA> requires(std::is_rvalue_reference_v<LAMBDA&&>)
+    [[deprecated("rvalue lambdas cause use after free")]] void addLambdaRetry(LAMBDA&& t) = delete;
+};
+
+struct IThreadPoolWithMemory : IThreadPool
+{
+    virtual ScratchBuffer& scratch() = 0;
+};
+
+template<ssize QUEUE_SIZE>
+struct ThreadPool : IThreadPool
+{
     Span<Thread> m_spThreads {};
     Mutex m_mtxQ {};
     CndVar m_cndQ {};
@@ -33,19 +72,15 @@ struct ThreadPool
     bool m_bStarted {};
     QueueArray<Task, QUEUE_SIZE> m_qTasks {};
 
-#ifndef NDEBUG
-    ThreadPool** m_ppDebugSelf {};
-#endif
-
     /* */
 
-    static inline thread_local int inl_threadId {};
+    static inline thread_local int gtl_threadId {};
 
     /* */
 
     ThreadPool() = default;
 
-    ThreadPool(IAllocator* pAlloc, int nThreads = ADT_GET_NPROCS());
+    ThreadPool(IAllocator* pAlloc, int nThreads = utils::max(ADT_GET_NPROCS() - 1, 2));
 
     ThreadPool(
         IAllocator* pAlloc,
@@ -58,25 +93,11 @@ struct ThreadPool
 
     /* */
 
-    void wait();
+    virtual void wait() override;
 
     void destroy(IAllocator* pAlloc);
 
-    bool add(Task task);
-
-    bool add(ThreadFn pfn, void* pArg);
-
-    template<typename LAMBDA> bool addLambda(LAMBDA& t);
-
-    template<typename LAMBDA> requires(std::is_rvalue_reference_v<LAMBDA&&>)
-    [[deprecated("rvalue lambdas cause use after free")]] bool addLambda(LAMBDA&& t) = delete;
-
-    void addRetry(Task task) { while (!add(task)); }
-
-    void addRetry(ThreadFn pfn, void* pArg) { while (!add(pfn, pArg)); }
-
-    template<typename LAMBDA> requires(std::is_rvalue_reference_v<LAMBDA&&>)
-    [[deprecated("rvalue lambdas cause use after free")]] void addLambdaRetry(LAMBDA&& t) = delete;
+    virtual bool add(Task task) override;
 
 protected:
     void start();
@@ -123,7 +144,7 @@ ThreadPool<QUEUE_SIZE>::loop()
     if (m_pfnLoopStart) m_pfnLoopStart(m_pLoopStartArg);
     ADT_DEFER( if (m_pfnLoopEnd) m_pfnLoopEnd(m_pLoopEndArg) );
 
-    inl_threadId = 1 + m_atomIdCounter.fetchAdd(1, atomic::ORDER::RELAXED);
+    gtl_threadId = 1 + m_atomIdCounter.fetchAdd(1, atomic::ORDER::RELAXED);
 
     while (true)
     {
@@ -231,25 +252,68 @@ ThreadPool<QUEUE_SIZE>::add(Task task)
     return false;
 }
 
+/* ThreadPool with ScratchBuffers created for each thread.
+ * Any thread can access its buffer with `threadPool.scratch()`. */
 template<ssize QUEUE_SIZE>
-inline bool
-ThreadPool<QUEUE_SIZE>::add(ThreadFn pfn, void* pArg)
+struct ThreadPoolWithMemory : ThreadPool<QUEUE_SIZE>, IThreadPoolWithMemory
 {
-    return add({pfn, pArg});
-}
+    static inline thread_local u8* gtl_pScratchMem;
+    static inline thread_local ScratchBuffer gtl_scratch;
 
-template<ssize QUEUE_SIZE>
-template<typename LAMBDA>
-inline bool
-ThreadPool<QUEUE_SIZE>::addLambda(LAMBDA& t)
-{
-    return add(+[](void* pArg) -> THREAD_STATUS
-        {
-            reinterpret_cast<LAMBDA*>(pArg)->operator()();
-            return 0;
-        },
-        (void*)(&t)
-    );
-}
+    /* */
+
+    using ThreadPool<QUEUE_SIZE>::ThreadPool;
+
+    ThreadPoolWithMemory(IAllocator* pAlloc, ssize nBytesEachBuffer, int nThreads = utils::max(ADT_GET_NPROCS() - 1, 2))
+        : ThreadPool<QUEUE_SIZE>(
+            pAlloc,
+            +[](void* p) { allocScratchForThisThread(reinterpret_cast<ssize>(p)); },
+            reinterpret_cast<void*>(nBytesEachBuffer),
+            +[](void*) { destroyScratchForThisThread(); },
+            nullptr,
+            nThreads
+        )
+    {
+        allocScratchForThisThread(nBytesEachBuffer);
+    }
+
+    /* */
+
+    virtual void wait() override { ThreadPool<QUEUE_SIZE>::wait(); }
+    virtual bool add(Task task) override { return ThreadPool<QUEUE_SIZE>::add(task); }
+    virtual ScratchBuffer& scratch() override { return gtl_scratch; }
+
+    void
+    destroy(IAllocator* pAlloc)
+    {
+        ThreadPool<QUEUE_SIZE>::destroy(pAlloc);
+        destroyScratchForThisThread();
+    }
+
+    void
+    destroyKeepScratch(IAllocator* pAlloc)
+    {
+        ThreadPool<QUEUE_SIZE>::destroy(pAlloc);
+    }
+
+    /* */
+
+    static void
+    allocScratchForThisThread(ssize size)
+    {
+        ADT_ASSERT(gtl_pScratchMem == nullptr, "already allocated");
+
+        gtl_pScratchMem = StdAllocator::inst()->zallocV<u8>(size);
+        gtl_scratch = ScratchBuffer {gtl_pScratchMem, size};
+    }
+
+    static void
+    destroyScratchForThisThread()
+    {
+        StdAllocator::inst()->free(gtl_pScratchMem);
+        gtl_pScratchMem = {};
+        gtl_scratch = {};
+    }
+};
 
 } /* namespace adt */

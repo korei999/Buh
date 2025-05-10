@@ -63,15 +63,7 @@ main(const int argc, const char* const* argv)
 
     parseArgs(argc, argv);
 
-    new(&app::g_threadPool) ThreadPool<128> {StdAllocator::inst(),
-        +[](void*) { app::allocScratchForThisThread(SIZE_1M); }, {},
-        +[](void*) { app::destroyScratchForThisThread(); }, {},
-        utils::max(ADT_GET_NPROCS() - 1, 2)
-    };
-    defer( app::g_threadPool.destroy(StdAllocator::inst()) );
-
-    app::allocScratchForThisThread(SIZE_1M);
-    defer( app::destroyScratchForThisThread() );
+    new(&app::g_threadPool) ThreadPoolWithMemory<128> {StdAllocator::inst(), SIZE_1M};
 
     String sFile {};
     defer( sFile.destroy(StdAllocator::inst()) );
@@ -105,7 +97,7 @@ main(const int argc, const char* const* argv)
         }
     }
 
-    app::g_rasterizer.rasterizeAsciiIntoAltas(StdAllocator::inst(), &app::g_font, s_barHeight);
+    app::g_rasterizer.rasterizeAscii(StdAllocator::inst(), &app::g_font, &app::g_threadPool, s_barHeight);
     defer( app::g_rasterizer.destroy(StdAllocator::inst()) );
 
     new(&app::g_wlClient) wayland::Client {"Buh", s_barHeight};
@@ -113,5 +105,7 @@ main(const int argc, const char* const* argv)
 
     app::g_bRunning = true;
 
+    /* no need it the pool anymore */
+    app::g_threadPool.destroyKeepScratch(StdAllocator::inst());
     frame::run();
 }
