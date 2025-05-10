@@ -97,6 +97,8 @@ main(const int argc, const char* const* argv)
         }
     }
 
+    defer( app::g_font.destroy() );
+
     app::g_rasterizer.rasterizeAscii(StdAllocator::inst(), &app::g_font, &app::g_threadPool, s_barHeight);
     defer( app::g_rasterizer.destroy(StdAllocator::inst()) );
 

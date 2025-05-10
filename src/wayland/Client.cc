@@ -380,7 +380,6 @@ Client::dwlLayout(
     [[maybe_unused]] const char* name
 )
 {
-    LOG_BAD("({}), name: '{}'\n", zdwl_ipc_manager_v2, name);
 }
 
 } /* namespace wayland */

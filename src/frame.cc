@@ -3,7 +3,6 @@
 #include "app.hh"
 #include "config.hh"
 
-#include "adt/logs.hh"
 #include "adt/file.hh"
 #include "adt/simd.hh"
 #include "adt/StdAllocator.hh"

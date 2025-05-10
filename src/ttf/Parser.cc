@@ -1,7 +1,5 @@
 #include "Parser.hh"
 
-#include <cmath>
-
 #include "adt/logs.hh"
 
 using namespace adt;
@@ -30,8 +28,8 @@ Parser::parse()
     return true;
 }
 
-static constexpr u32
-getTableChecksum(u32* pTable, u32 nBytes)
+[[maybe_unused]] static constexpr u32
+getTableChecksum(const u32* pTable, u32 nBytes)
 {
     u32 sum = 0;
     u32 nLongs = (nBytes + 3) / 4;
@@ -365,10 +363,22 @@ Parser::getGlyphOffset(u32 idx)
 }
 
 bool
-Parser::readCompoundGlyph(Glyph*)
+Parser::readCompoundGlyph(Glyph* g)
 {
-    // TODO:
-    LOG_WARN("ignoring compound glyph...\n");
+    auto& cg = g->uGlyph.compound;
+
+    cg.eFlag = COMPONENT_FLAG(m_bin.read16Rev());
+    cg.glyphIndex = m_bin.read16Rev();
+
+    const u32 offset = getGlyphOffset(cg.glyphIndex);
+    auto fCachedGlyph = m_mapOffsetToGlyph.search(offset);
+
+    if (fCachedGlyph)
+    {
+        *g = fCachedGlyph.value();
+        return true;
+    }
+
     return false;
 }
 
@@ -493,15 +503,14 @@ Parser::readGlyph(u32 code)
     if (fCachedGlyph) return &fCachedGlyph.value();
 
     const auto fGlyf = searchTable("glyf");
-    const auto& glyfTable = *fGlyf.pData;
-
     ADT_ASSERT(fGlyf, " ");
+    const auto& glyfTable = fGlyf.value();
 
-    ADT_ASSERT(offset >= glyfTable.val.offset, " ");
+    ADT_ASSERT(offset >= glyfTable.offset, " ");
 
-    if (offset >= glyfTable.val.offset + glyfTable.val.length)
+    if (offset >= glyfTable.offset + glyfTable.length)
     {
-        LOG_BAD("offset >= glyfTable.val.offset + glyfTable.val.length\n");
+        LOG_BAD("offset >= glyfTable.offset + glyfTable.length\n");
         return nullptr;
     }
 
@@ -627,28 +636,6 @@ Parser::parse2()
         );
 #endif
     }
-
-#ifdef OPT_DBG_TTF
-    auto fGlyf = searchTable("glyf");
-    if (fGlyf)
-    {
-        LOG(
-            "'glyf' found: '{}', offset: {}, length: {}\n",
-            fGlyf.value().tag, fGlyf.value().offset, fGlyf.value().length
-        );
-    }
-    else LOG_FATAL("'glyf' header not found\n");
-
-    auto fHead = searchTable("head");
-    if (fHead)
-    {
-        LOG(
-            "'head' found: '{}', offset: {}, length: {}\n",
-            fHead.value().tag, fHead.value().offset, fHead.value().length
-        );
-    }
-    else LOG_FATAL("'head' header not found?\n");
-#endif
 
     readCmapTable();
     readHeadTable();

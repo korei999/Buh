@@ -5,7 +5,6 @@
 #include "adt/BufferAllocator.hh"
 #include "adt/Array.hh"
 #include "adt/logs.hh"
-#include "adt/simd.hh"
 
 using namespace adt;
 
@@ -30,12 +29,6 @@ struct PointOnCurve
 Vec<PointOnCurve>
 pointsWithMissingOnCurve(IAllocator* pAlloc, const Glyph& g)
 {
-    if (g.numberOfContours == -1)
-    {
-        LOG_BAD("compound glyph (numberOfContours: '{}')\n", g.numberOfContours);
-        return {};
-    }
-
     const auto& aGlyphPoints = g.uGlyph.simple.vPoints;
     const u32 size = aGlyphPoints.size();
 

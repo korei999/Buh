@@ -290,6 +290,7 @@ struct ThreadPoolWithMemory : ThreadPool<QUEUE_SIZE>, IThreadPoolWithMemory
         destroyScratchForThisThread();
     }
 
+    /* `destroyScratchForThisThread()` later. */
     void
     destroyKeepScratch(IAllocator* pAlloc)
     {
