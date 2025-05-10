@@ -188,7 +188,6 @@ makeItCurvy(IAllocator* pAlloc, const Vec<PointOnCurve>& aNonCurvyPoints, CurveE
 void
 Rasterizer::rasterizeGlyph(ScratchBuffer* pScratch, const Parser& font, const Glyph& glyph, int xOff, int yOff)
 {
-    // BufferAllocator buff {app::g_threadPool.gtl_scratch.allMem<u8>()};
     BufferAllocator buff {pScratch->allMem<u8>()};
 
     CurveEndIdx endIdxs {};

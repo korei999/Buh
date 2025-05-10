@@ -90,35 +90,46 @@ run()
                             defer( thisXOff += xScale );
     
                             if (ch == L' ') continue;
-    
-                            const MapResult mRes = rast.addOrSearchGlyph(&app::g_threadPool.scratch(), StdAllocator::inst(), &app::g_font, ch);
-                            if (!mRes) continue;
-    
-                            const auto [u, v] = mRes.value();
-    
-                            const Span2D<u8> spAtlas = rast.atlasSpan();
-                            const int maxx = utils::min(utils::min(rbar.m_width, maxAbsX), xOffset + thisXOff + xScale);
-                            for (int y = 0; y < scale; ++y)
+
+                            try
                             {
-                                for (int x = xOffset + thisXOff; x < maxx; ++x)
+                                const MapResult<u32, Pair<i16, i16>> mRes = rast.addOrSearchGlyph(
+                                    &app::g_threadPool.scratch(),
+                                    StdAllocator::inst(),
+                                    &app::g_font, ch
+                                );
+                                if (!mRes) continue;
+    
+                                const auto [u, v] = mRes.value();
+    
+                                const Span2D<u8> spAtlas = rast.atlasSpan();
+                                const int maxx = utils::min(utils::min(rbar.m_width, maxAbsX), xOffset + thisXOff + xScale);
+                                for (int y = 0; y < scale; ++y)
                                 {
-                                    const u8 val = spAtlas((x - xOffset - thisXOff) + u, y + v);
-                                    if (val == 0) continue;
+                                    for (int x = xOffset + thisXOff; x < maxx; ++x)
+                                    {
+                                        const u8 val = spAtlas((x - xOffset - thisXOff) + u, y + v);
+                                        if (val == 0) continue;
 
-                                    auto& rDest = reinterpret_cast<ImagePixelARGBle&>(spBuffer(
-                                        x, rbar.m_height - 1 - y - yOff
-                                    ));
+                                        auto& rDest = reinterpret_cast<ImagePixelARGBle&>(spBuffer(
+                                            x, rbar.m_height - 1 - y - yOff
+                                        ));
 
-                                    if (val == 255) rDest.data = color;
+                                        if (val == 255) rDest.data = color;
 
-                                    /* lerp */
-                                    const f32 t = val / 255.0f;
+                                        /* lerp */
+                                        const f32 t = val / 255.0f;
 
-                                    rDest.a = 0xff;
-                                    rDest.r = (u8)((1.0f - t) * rDest.r + t * penR);
-                                    rDest.g = (u8)((1.0f - t) * rDest.g + t * penG);
-                                    rDest.b = (u8)((1.0f - t) * rDest.b + t * penB);
+                                        rDest.a = 0xff;
+                                        rDest.r = (u8)((1.0f - t) * rDest.r + t * penR);
+                                        rDest.g = (u8)((1.0f - t) * rDest.g + t * penG);
+                                        rDest.b = (u8)((1.0f - t) * rDest.b + t * penB);
+                                    }
                                 }
+                            }
+                            catch (const AllocException& ex)
+                            {
+                                ex.printErrorMsg(stderr);
                             }
                         }
 

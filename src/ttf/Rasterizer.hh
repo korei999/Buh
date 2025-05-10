@@ -12,6 +12,7 @@ namespace ttf
 
 struct Rasterizer
 {
+    using UVSearch = adt::MapResult<adt::u32, adt::Pair<adt::i16, adt::i16>>;
     static constexpr adt::f32 X_STEP = 0.50f; /* x-axis spacing between glyphs */
 
     /* */
@@ -25,16 +26,14 @@ struct Rasterizer
     /* */
 
     void destroy(adt::IAllocator* pAlloc);
-
     void rasterizeAscii(adt::IAllocator* pAlloc, Parser* pFont, adt::IThreadPoolWithMemory* pThreadPool, adt::f32 scale);
+    UVSearch addOrSearchGlyph(adt::ScratchBuffer* pScratch, adt::IAllocator* pAlloc, Parser* pFont, adt::u32 code);
+    void rasterizeGlyph(adt::ScratchBuffer* pScratch, const Parser& pFont, const Glyph& pGlyph, int xOff, int yOff);
 
     adt::Span2D<adt::u8> atlasSpan() { return m_atlas.spanMono(); }
     const adt::Span2D<adt::u8> atlasSpan() const { return m_atlas.spanMono(); }
+    UVSearch searchGlyphAtlasUV(adt::u32 code) const { return m_mapCodeToUV.search(code); }
 
-    adt::MapResult<adt::u32, adt::Pair<adt::i16, adt::i16>> searchGlyphAtlasUV(adt::u32 code) const { return m_mapCodeToUV.search(code); }
-    adt::MapResult<adt::u32, adt::Pair<adt::i16, adt::i16>> addOrSearchGlyph(adt::ScratchBuffer* pScratch, adt::IAllocator* pAlloc, Parser* pFont, adt::u32 code);
-
-    void rasterizeGlyph(adt::ScratchBuffer* pScratch, const Parser& pFont, const Glyph& pGlyph, int xOff, int yOff); /* NOTE: uses app::gtl_scratch */
 };
 
 } /* namespace ttf */
