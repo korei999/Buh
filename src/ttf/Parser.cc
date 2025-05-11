@@ -2,6 +2,8 @@
 
 #include "adt/logs.hh"
 
+#include <cmath>
+
 using namespace adt;
 
 namespace ttf
@@ -97,6 +99,45 @@ FWord
 Parser::readFWord()
 {
     return m_bin.read16Rev();
+}
+
+Glyph*
+Parser::readGlyphFromOffset(ssize offset)
+{
+    const auto fGlyf = searchTable("glyf");
+    ADT_ASSERT(fGlyf, " ");
+    const auto& glyfTable = fGlyf.value();
+
+    ADT_ASSERT(offset >= glyfTable.offset, " ");
+
+    if (offset >= glyfTable.offset + glyfTable.length)
+    {
+        LOG_BAD("offset >= glyfTable.offset + glyfTable.length\n");
+        return nullptr;
+    }
+
+    m_bin.m_pos = offset;
+    Glyph newGlyph {
+        .numberOfContours = i16(m_bin.read16Rev()),
+        .xMin = readFWord(),
+        .yMin = readFWord(),
+        .xMax = readFWord(),
+        .yMax = readFWord(),
+    };
+
+    ADT_ASSERT(newGlyph.numberOfContours >= -1, " ");
+
+    if (newGlyph.numberOfContours == -1)
+    {
+        if (!readCompoundGlyph(&newGlyph))
+            return nullptr;
+    }
+    else
+    {
+        readSimpleGlyph(&newGlyph);
+    }
+
+    return &m_mapOffsetToGlyph.insert(m_pAlloc, offset, newGlyph).value();
 }
 
 void
@@ -378,6 +419,16 @@ Parser::readCompoundGlyph(Glyph* g)
         *g = fCachedGlyph.value();
         return true;
     }
+    else
+    {
+        /* fall back to simply glyph */
+        Glyph* pGlyph = readGlyphFromOffset(offset);
+        if (pGlyph)
+        {
+            *g = *pGlyph;
+            return true;
+        }
+    }
 
     return false;
 }
@@ -502,41 +553,7 @@ Parser::readGlyph(u32 code)
     auto fCachedGlyph = m_mapOffsetToGlyph.search(offset);
     if (fCachedGlyph) return &fCachedGlyph.value();
 
-    const auto fGlyf = searchTable("glyf");
-    ADT_ASSERT(fGlyf, " ");
-    const auto& glyfTable = fGlyf.value();
-
-    ADT_ASSERT(offset >= glyfTable.offset, " ");
-
-    if (offset >= glyfTable.offset + glyfTable.length)
-    {
-        LOG_BAD("offset >= glyfTable.offset + glyfTable.length\n");
-        return nullptr;
-    }
-
-    m_bin.m_pos = offset;
-    Glyph newGlyph {
-        .numberOfContours = i16(m_bin.read16Rev()),
-        .xMin = readFWord(),
-        .yMin = readFWord(),
-        .xMax = readFWord(),
-        .yMax = readFWord(),
-    };
-
-    ADT_ASSERT(newGlyph.numberOfContours >= -1, " ");
-
-    if (newGlyph.numberOfContours == -1)
-    {
-        if(!readCompoundGlyph(&newGlyph))
-            return nullptr;
-    }
-    else
-    {
-        readSimpleGlyph(&newGlyph);
-    }
-
-    /* cache everything */
-    return &m_mapOffsetToGlyph.insert(m_pAlloc, offset, newGlyph).value();
+    return readGlyphFromOffset(offset);
 };
 
 void
