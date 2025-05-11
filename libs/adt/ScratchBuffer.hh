@@ -19,11 +19,11 @@ struct ScratchBuffer
 
     template<typename T>
     ScratchBuffer(Span<T> sp) noexcept
-        : m_sp {reinterpret_cast<u8*>(sp.data()), sp.size() * sizeof(T)} {}
+        : m_sp {reinterpret_cast<u8*>(sp.data()), ssize(sp.size() * sizeof(T))} {}
 
     template<typename T, usize SIZE>
     ScratchBuffer(T (&aBuff)[SIZE]) noexcept
-        : m_sp {reinterpret_cast<u8*>(aBuff), SIZE * sizeof(T)} {}
+        : m_sp {reinterpret_cast<u8*>(aBuff), ssize(SIZE * sizeof(T))} {}
 
     template<typename T>
     ScratchBuffer(T* pMem, ssize size) noexcept
@@ -53,7 +53,7 @@ inline Span<T>
 ScratchBuffer::nextMemZero(ssize mCount) noexcept
 {
     auto sp = nextMem<T>();
-    memset(sp.data(), 0, sp.size() * sizeof(T));
+    memset(sp.data(), 0, mCount * sizeof(T));
     return sp;
 }
 
