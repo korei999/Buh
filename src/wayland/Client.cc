@@ -105,7 +105,9 @@ static const zdwl_ipc_output_v2_listener s_dwlOutputListener {
     .title = decltype(zdwl_ipc_output_v2_listener::title)(methodPointer(&Client::Bar::title)),
     .appid = decltype(zdwl_ipc_output_v2_listener::appid)(methodPointer(&Client::Bar::appid)),
     .layout_symbol = decltype(zdwl_ipc_output_v2_listener::layout_symbol)(methodPointer(&Client::Bar::layoutSymbol)),
+#ifdef OPT_IPC_KBLAYOUT
     .kblayout = decltype(zdwl_ipc_output_v2_listener::kblayout)(methodPointer(&Client::Bar::keyboardLayout)),
+#endif
     .frame = decltype(zdwl_ipc_output_v2_listener::frame)(methodPointer(&Client::Bar::frame)),
     .fullscreen = decltype(zdwl_ipc_output_v2_listener::fullscreen)(methodPointer(&Client::Bar::fullscreen)),
     .floating = decltype(zdwl_ipc_output_v2_listener::floating)(methodPointer(&Client::Bar::floating)),

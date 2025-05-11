@@ -26,13 +26,12 @@ endif()
 
 # add_compile_options(-ftime-trace)
 
-option(OPT_SSE4_2 "" OFF)
+option(OPT_SSE4_2 "" ON)
 option(OPT_AVX2 "" OFF)
 option(OPT_MARCH_NATIVE "" OFF)
 
+option(OPT_IPC_KBLAYOUT "" ON)
 option(OPT_MIMALLOC "" OFF)
-option(OPT_SW "" OFF)
-option(OPT_GL "" ON)
 option(OPT_FAST_MATH "" OFF)
 option(OPT_PRECOMPILE_ADT "" OFF)
 option(OPT_ANALYZE "" OFF)
@@ -41,6 +40,10 @@ option(OPT_DBG_TTF "" OFF)
 
 if (OPT_ANALYZE)
     add_compile_options(-fanalyzer)
+endif()
+
+if (OPT_IPC_KBLAYOUT)
+    add_definitions("-DOPT_IPC_KBLAYOUT")
 endif()
 
 if (OPT_MIMALLOC)
@@ -267,7 +270,12 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
     set(XDG_SHELL "${WAYLAND_PROTOCOLS_DIR}/stable/xdg-shell/xdg-shell.xml")
     set(WLR_LAYER_SHELL "protocols/wlr-layer-shell-unstable-v1.xml")
-    set(DWL_IPC "protocols/dwl-ipc-unstable-kblayout-v2.xml")
+
+    if (OPT_IPC_KBLAYOUT)
+        set(DWL_IPC "protocols/dwl-ipc-unstable-kblayout-v2.xml")
+    else()
+        set(DWL_IPC "protocols/dwl-ipc-unstable-v2.xml")
+    endif()
 
     message(STATUS "WLP: '${WLP}'")
     message(STATUS "WLPD: '${WLPD}'")

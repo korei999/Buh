@@ -1,5 +1,7 @@
 #pragma once
 
+#include "adt/String.hh"
+
 namespace config
 {
 
@@ -50,11 +52,13 @@ struct StatusEntry
         };
     }
 
+#ifdef OPT_IPC_KBLAYOUT
     static StatusEntry
     makeKeyboardLayout()
     {
         return {.eType = TYPE::KEYBOARD_LAYOUT };
     }
+#endif
 
     static StatusEntry
     makeFileWatch(const char* ntsFilePath, adt::f64 updateRateMS, PfnFormatString pfnFormatString = nullptr)
@@ -98,7 +102,9 @@ inline StatusEntry inl_aStatusEntries[] {
     StatusEntry::makeFileWatch("/sys/class/drm/card1/device/hwmon/hwmon3/temp2_input", 3000.0, formatGpuTempC),
     StatusEntry::makeFileWatch("/sys/class/drm/card1/device/hwmon/hwmon3/power1_input", 3000.0, formatGpuPower),
     StatusEntry::makeDateTime("%Y-%m-%d %I:%M%p", 1000.0*30), /* `man strftime` */
+#ifdef OPT_IPC_KBLAYOUT
     StatusEntry::makeKeyboardLayout(),
+#endif
 };
 
 } /* namespace config */
