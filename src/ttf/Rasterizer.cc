@@ -181,7 +181,7 @@ makeItCurvy(IAllocator* pAlloc, const Vec<PointOnCurve>& aNonCurvyPoints, CurveE
 void
 Rasterizer::rasterizeGlyph(ScratchBuffer* pScratch, const Parser& font, const Glyph& glyph, int xOff, int yOff)
 {
-    BufferAllocator buff {pScratch->allMem<u8>()};
+    BufferAllocator buff {pScratch->nextMem<u8>()};
 
     CurveEndIdx endIdxs {};
     Vec<PointOnCurve> vCurvyPoints = makeItCurvy(
@@ -342,7 +342,7 @@ Rasterizer::rasterizeAscii(IAllocator* pAlloc, Parser* pFont, IThreadPoolWithMem
 
     const i16 xStep = iScale * X_STEP;
 
-    BufferAllocator buff {pThreadPool->scratch().template allMem<u8>()};
+    BufferAllocator buff {pThreadPool->scratch().template nextMem<u8>()};
 
     try
     {
