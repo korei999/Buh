@@ -7,6 +7,7 @@
 #include "adt/simd.hh"
 #include "adt/StdAllocator.hh"
 #include "adt/math.hh"
+#include "adt/BufferAllocator.hh"
 
 #include <poll.h>
 
@@ -15,7 +16,28 @@ using namespace adt;
 namespace frame
 {
 
-bool g_bRedraw = false;
+bool g_bRedraw = true;
+
+static void
+fillBg(
+    Span2D<u32> sp,
+    const int x,
+    const int y,
+    const int width,
+    const int height,
+    u32 color
+)
+{
+    for (int yOff = y; yOff < height; ++yOff)
+    {
+        simd::i32Fillx4(Span<i32> {
+                reinterpret_cast<i32*>(&sp(x, yOff)),
+                width
+            },
+            color
+        );
+    }
+}
 
 void
 run()
@@ -24,8 +46,8 @@ run()
     pollfd pfd {.fd = wl_display_get_fd(pDisplay), .events = POLLIN, .revents {}};
 
     ttf::Rasterizer& rast = app::g_rasterizer;
-    const int scale = static_cast<int>(rast.m_scale);
-    const int xScale = scale * ttf::Rasterizer::X_STEP;
+    const int yScale = static_cast<int>(rast.m_scale);
+    const int xScale = yScale * ttf::Rasterizer::X_STEP;
 
     f64 updateRateMS = 1000.0 * 60.0;
     for (const auto& entry : config::inl_aStatusEntries)
@@ -34,8 +56,12 @@ run()
             updateRateMS = utils::min(updateRateMS, entry.updateRateMS);
     }
 
+    BufferAllocator buffer {app::g_threadPool.gtl_scratch.nextMem<u8>()};
+
     while (app::g_bRunning)
     {
+        defer( buffer.reset() );
+
         wl_display_flush(pDisplay);
 
         const int pollStatus = poll(&pfd, 1, updateRateMS);
@@ -57,16 +83,10 @@ run()
 
             for (wayland::Client::Bar* pBar : app::g_wlClient.m_vpBars)
             {
-                wayland::Client::Bar& rbar = *pBar;
+                wayland::Client::Bar& rBar = *pBar;
 
-                u32* p = reinterpret_cast<u32*>(rbar.m_pPoolData);
-                Span2D<u32> spBuffer {p, rbar.m_width, rbar.m_height, rbar.m_width};
-    
-#ifdef ADT_AVX2
-                simd::i32Fillx8({reinterpret_cast<i32*>(p), rbar.m_width * rbar.m_height}, 0xff777777);
-#else
-                simd::i32Fillx4({reinterpret_cast<i32*>(p), rbar.m_width * rbar.m_height}, 0xff777777);
-#endif
+                u32* pPoolBuffer = reinterpret_cast<u32*>(rBar.m_pPoolData);
+                Span2D<u32> spBuffer {pPoolBuffer, rBar.m_width, rBar.m_height, rBar.m_width};
     
                 {
                     int xOff = 0;
@@ -75,15 +95,15 @@ run()
                     auto clDrawString = [&](
                             const int xOffset,
                             const StringView sv,
-                            const u32 color,
+                            const u32 fgColor,
+                            const u32 bgColor,
                             const int maxAbsX = 9999999
                         ) -> int
                     {
                         int thisXOff = 0;
 
-                        const u8 penR = (color >> 16) & 0xff;
-                        const u8 penG = (color >> 8) & 0xff;
-                        const u8 penB = (color >> 0) & 0xff;
+                        auto fg = reinterpret_cast<const ImagePixelARGBle&>(fgColor);
+                        auto bg = reinterpret_cast<const ImagePixelARGBle&>(bgColor);
 
                         for (const wchar_t ch : StringGlyphIt(sv))
                         {
@@ -91,64 +111,63 @@ run()
     
                             if (ch == L' ') continue;
 
-                            try
+                            const auto mFoundUV = rast.addOrSearchGlyph(
+                                &app::g_threadPool.scratch(),
+                                StdAllocator::inst(),
+                                &app::g_font, ch
+                            );
+                            if (!mFoundUV) continue;
+    
+                            const auto [u, v] = mFoundUV.value();
+    
+                            const Span2D<u8> spAtlas = rast.atlasSpan();
+                            const int maxx = utils::min(utils::min(rBar.m_width, maxAbsX), xOffset + thisXOff + xScale);
+                            for (int y = 0; y < yScale; ++y)
                             {
-                                const MapResult<u32, Pair<i16, i16>> mRes = rast.addOrSearchGlyph(
-                                    &app::g_threadPool.scratch(),
-                                    StdAllocator::inst(),
-                                    &app::g_font, ch
-                                );
-                                if (!mRes) continue;
-    
-                                const auto [u, v] = mRes.value();
-    
-                                const Span2D<u8> spAtlas = rast.atlasSpan();
-                                const int maxx = utils::min(utils::min(rbar.m_width, maxAbsX), xOffset + thisXOff + xScale);
-                                for (int y = 0; y < scale; ++y)
+                                for (int x = xOffset + thisXOff; x < maxx; ++x)
                                 {
-                                    for (int x = xOffset + thisXOff; x < maxx; ++x)
-                                    {
-                                        const u8 val = spAtlas((x - xOffset - thisXOff) + u, y + v);
-                                        if (val == 0) continue;
+                                    const u8 val = spAtlas((x - xOffset - thisXOff) + u, y + v);
+                                    if (val == 0) continue;
 
-                                        auto& rDest = reinterpret_cast<ImagePixelARGBle&>(spBuffer(
-                                            x, rbar.m_height - 1 - y - yOff
-                                        ));
+                                    auto& rDest = reinterpret_cast<ImagePixelARGBle&>(spBuffer(
+                                        x, rBar.m_height - 1 - y - yOff
+                                    ));
 
-                                        const f32 t = val / 255.0f;
+                                    const f32 t = val / 255.0f;
 
-                                        rDest.a = 0xff;
-                                        rDest.r = (u8)(math::lerp(rDest.r, penR, t));
-                                        rDest.g = (u8)(math::lerp(rDest.g, penG, t));
-                                        rDest.b = (u8)(math::lerp(rDest.b, penB, t));
-                                    }
+                                    rDest.a = 0xff;
+                                    rDest.r = (u8)(math::lerp(bg.r, fg.r, t));
+                                    rDest.g = (u8)(math::lerp(bg.g, fg.g, t));
+                                    rDest.b = (u8)(math::lerp(bg.b, fg.b, t));
                                 }
-                            }
-                            catch (const AllocException& ex)
-                            {
-                                ex.printErrorMsg(stderr);
                             }
                         }
 
                         return sv.size() * xScale;
                     };
-    
-                    int xOffStatus = rbar.m_width;
+
+                    int xOffStatus = rBar.m_width;
+                    try
                     {
-                        auto clDrawEntry = [&](const StringView sv)
+                        auto clDrawEntry = [&](const StringView sv, const int offset)
                         {
-                            xOffStatus -= sv.size() * xScale;
-                            clDrawString(xOffStatus, sv, 0xff000000);
+                            clDrawString(offset, sv, config::colorScheme.status.fg, config::colorScheme.status.bg);
                         };
+
+                        VecManaged<Pair<StringView, int>> vEntryStrings {&buffer};
 
                         const ssize last = utils::size(config::inl_aStatusEntries) - 1;
                         for (ssize i = last; i >= 0; --i)
                         {
                             config::StatusEntry& entry = config::inl_aStatusEntries[i];
+
                             switch (entry.eType)
                             {
                                 case config::StatusEntry::TYPE::TEXT:
-                                clDrawEntry(entry.nts);
+                                {
+                                    xOffStatus -= strlen(entry.nts) * xScale;
+                                    vEntryStrings.emplace(entry.nts, xOffStatus);
+                                }
                                 break;
 
                                 case config::StatusEntry::TYPE::DATE_TIME:
@@ -172,12 +191,16 @@ run()
                                         entry.lastUpdateTimeMS = currTime;
                                     }
 
-                                    clDrawEntry(entry.sfHolder);
+                                    xOffStatus -= entry.sfHolder.size() * xScale;
+                                    vEntryStrings.emplace(entry.sfHolder, xOffStatus);
                                 }
                                 break;
 
                                 case config::StatusEntry::TYPE::KEYBOARD_LAYOUT:
-                                clDrawEntry(rbar.m_sfKbLayout);
+                                {
+                                    xOffStatus -= rBar.m_sfKbLayout.size() * xScale;
+                                    vEntryStrings.emplace(rBar.m_sfKbLayout, xOffStatus);
+                                }
                                 break;
 
                                 case config::StatusEntry::TYPE::FILE_WATCH:
@@ -197,64 +220,68 @@ run()
                                         entry.lastUpdateTimeMS = currTime;
                                     }
 
-                                    clDrawEntry(entry.sfHolder);
+                                    xOffStatus -= entry.sfHolder.size() * xScale;
+                                    vEntryStrings.emplace(entry.sfHolder, xOffStatus);
                                 }
                                 break;
                             }
+
                             xOffStatus -= xScale*2;
                         }
+
+                        fillBg(spBuffer, xOffStatus, 0, rBar.m_width - xOffStatus, yScale, config::colorScheme.status.bg);
+                        for (auto [sv, offset] : vEntryStrings) clDrawEntry(sv, offset);
+                    }
+                    catch (const AllocException& ex)
+                    {
+                        ex.printErrorMsg(stderr);
                     }
     
-                    for (const Tag& tag : rbar.m_vTags)
+                    for (const Tag& tag : rBar.m_vTags)
                     {
-                        const ssize tagI = rbar.m_vTags.idx(&tag);
-                        char aBuff[4] {};
-                        const ssize n = print::toSpan(aBuff, "{}", 1 + tagI);
+                        const ssize tagI = rBar.m_vTags.idx(&tag);
+                        char aTagStringBuff[4] {};
+                        const ssize n = print::toSpan(aTagStringBuff, "{}", 1 + tagI);
                         const int tagXBegin = xOff;
+                        u32 fgColor = config::colorScheme.tag.fg;
+                        u32 bgColor = config::colorScheme.tag.bg;
 
                         if (tag.eState == ZDWL_IPC_OUTPUT_V2_TAG_STATE_URGENT)
                         {
-                            const int numberLen = (n*xScale) + xScale/2 + xScale;
-                            for (int y = 0; y < scale; ++y)
-                            {
-#ifdef ADT_AVX2
-                                simd::i32Fillx8({(i32*)&spBuffer(xOff, y), numberLen}, 0xffac4242);
-#else
-                                simd::i32Fillx4({(i32*)&spBuffer(xOff, y), numberLen}, 0xffac4242);
-#endif
-                            }
+                            fgColor = config::colorScheme.urgentTag.fg;
+                            bgColor = config::colorScheme.urgentTag.bg;
+                        }
+                        else if (tag.eState == ZDWL_IPC_OUTPUT_V2_TAG_STATE_ACTIVE)
+                        {
+                            fgColor = config::colorScheme.activeTag.fg;
+                            bgColor = config::colorScheme.activeTag.bg;
                         }
 
-                        const u32 color = [&]
-                        {
-                            if (tag.eState == ZDWL_IPC_OUTPUT_V2_TAG_STATE_ACTIVE ||
-                                tag.eState == ZDWL_IPC_OUTPUT_V2_TAG_STATE_URGENT
-                            )
-                            {
-                                return 0xff000000U;
-                            }
-                            else
-                            {
-                                return 0xff555555U;
-                            }
-                        }();
-    
                         xOff += xScale / 4;
+
+                        for (int y = 0; y < yScale; ++y)
+                        {
+                            simd::i32Fillx4({
+                                    reinterpret_cast<i32*>(&spBuffer(tagXBegin, y)),
+                                    (7*xScale)/4 + n*xScale /* aka: xScale/4 + xScale/2 + (n*xScale) + xScale */
+                                }, bgColor
+                            );
+                        }
 
                         if (tag.nClients > 0)
                         {
-                            /* draw lil something */
-                            const int height = rbar.m_height / 5;
+                            /* lil square */
+                            const int height = rBar.m_height / 5;
                             const int yOff2 = height / 1.5;
                             for (int y = 0; y < height; ++y)
                             {
                                 for (int x = 0; x < height; ++x)
-                                    spBuffer(x + xOff, y + yOff2) = color;
+                                    spBuffer(x + xOff, y + yOff2) = fgColor;
                             }
                         }
-    
+
                         xOff += xScale / 2;
-                        xOff += clDrawString(xOff, StringView {aBuff, n}, color, xOffStatus);
+                        xOff += clDrawString(xOff, StringView {aTagStringBuff, n}, fgColor, bgColor, xOffStatus);
                         xOff += xScale;
     
                         const int tagXEnd = xOff;
@@ -264,20 +291,33 @@ run()
                             app::g_wlClient.m_pointer.eButton == wayland::Client::Pointer::BUTTON::LEFT
                         )
                         {
-                            if (app::g_wlClient.m_pointer.pLastEnterSufrace == rbar.m_pSurface)
-                                zdwl_ipc_output_v2_set_tags(rbar.m_pDwlOutput, 1 << tagI, 0);
+                            if (app::g_wlClient.m_pointer.pLastEnterSufrace == rBar.m_pSurface)
+                                zdwl_ipc_output_v2_set_tags(rBar.m_pDwlOutput, 1 << tagI, 0);
                         }
                     }
+
+                    for (int y = 0; y < yScale; ++y)
+                    {
+                        simd::i32Fillx4({
+                                reinterpret_cast<i32*>(&spBuffer(xOff, y)),
+                                rBar.m_sfLayoutIcon.size()*xScale + xScale*2
+                            }, config::colorScheme.tag.bg
+                        );
+                    }
+
                     xOff += xScale;
-    
-                    xOff += clDrawString(xOff, rbar.m_sfLayoutIcon, 0xff000000, xOffStatus);
-                    xOff += xScale * 2;
-                    xOff += clDrawString(xOff, rbar.m_sfTitle, 0xff000000, xOffStatus);
+                    xOff += clDrawString(xOff, rBar.m_sfLayoutIcon, config::colorScheme.status.fg, config::colorScheme.tag.bg, xOffStatus);
+                    xOff += xScale;
+
+                    fillBg(spBuffer, xOff, 0, (xOffStatus - xOff) + xScale, yScale, config::colorScheme.title.bg);
+
+                    xOff += xScale;
+                    xOff += clDrawString(xOff, rBar.m_sfTitle, config::colorScheme.title.fg, config::colorScheme.title.bg, xOffStatus);
                 }
     
-                wl_surface_attach(rbar.m_pSurface, rbar.m_pBuffer, 0, 0);
-                wl_surface_damage_buffer(rbar.m_pSurface, 0, 0, rbar.m_width, rbar.m_height);
-                wl_surface_commit(rbar.m_pSurface);
+                wl_surface_attach(rBar.m_pSurface, rBar.m_pBuffer, 0, 0);
+                wl_surface_damage_buffer(rBar.m_pSurface, 0, 0, rBar.m_width, rBar.m_height);
+                wl_surface_commit(rBar.m_pSurface);
             }
         }
 

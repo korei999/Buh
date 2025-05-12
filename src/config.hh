@@ -1,6 +1,7 @@
 #pragma once
 
 #include "adt/String.hh"
+#include "ColorScheme.hh"
 
 namespace config
 {
@@ -106,5 +107,23 @@ inline StatusEntry inl_aStatusEntries[] {
     StatusEntry::makeKeyboardLayout(),
 #endif
 };
+
+constexpr ColorScheme ColorSchemePreset0 {
+    .tag       {.fg = 0xff555555, .bg = 0xff777777},
+    .activeTag {.fg = 0xff000000, .bg = 0xff777777},
+    .urgentTag {.fg = 0xff000000, .bg = 0xffac4242},
+    .title     {.fg = 0xff000000, .bg = 0xff777777},
+    .status    {.fg = 0xff000000, .bg = 0xff777777},
+};
+
+constexpr ColorScheme ColorSchemePreset1 {
+    .tag       {.fg = 0xff000000, .bg = 0xff0000ff},
+    .activeTag {.fg = 0xff000000, .bg = 0xff00ff00},
+    .urgentTag {.fg = 0xff000000, .bg = 0xffff0000},
+    .title     {.fg = 0xff000000, .bg = 0xffffff00},
+    .status    {.fg = 0xff000000, .bg = 0xffff00ff},
+};
+
+constexpr ColorScheme colorScheme = ColorSchemePreset0;
 
 } /* namespace config */

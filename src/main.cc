@@ -110,5 +110,8 @@ main(const int argc, const char* const* argv)
 
     /* no need in the pool anymore */
     app::g_threadPool.destroyKeepScratch(StdAllocator::inst());
+
     frame::run();
+
+    app::g_threadPool.destroyScratchForThisThread();
 }

@@ -265,7 +265,7 @@ Rasterizer::rasterizeGlyph(ScratchBuffer* pScratch, const Parser& font, const Gl
     }
 }
 
-MapResult<u32, Pair<i16, i16>>
+adt::MapResult<u32, Rasterizer::UV>
 Rasterizer::addOrSearchGlyph(ScratchBuffer* pScratch, IAllocator* pAlloc, Parser* pFont, u32 code)
 {
     auto mFound = m_mapCodeToUV.search(code);
