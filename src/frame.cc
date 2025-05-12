@@ -7,7 +7,7 @@
 #include "adt/simd.hh"
 #include "adt/StdAllocator.hh"
 #include "adt/math.hh"
-#include "adt/BufferAllocator.hh"
+#include "adt/Arena.hh"
 
 #include <poll.h>
 
@@ -56,7 +56,7 @@ run()
             updateRateMS = utils::min(updateRateMS, entry.updateRateMS);
     }
 
-    BufferAllocator buffer {app::g_threadPool.gtl_scratch.nextMem<u8>()};
+    Arena buffer {SIZE_1K*3};
 
     while (app::g_bRunning)
     {
@@ -111,13 +111,23 @@ run()
     
                             if (ch == L' ') continue;
 
-                            const auto mFoundUV = rast.addOrSearchGlyph(
-                                &app::g_threadPool.scratch(),
-                                StdAllocator::inst(),
-                                &app::g_font, ch
-                            );
-                            if (!mFoundUV) continue;
+                            MapResult<u32, ttf::Rasterizer::UV> mFoundUV {};
+
+                            try
+                            {
+                                mFoundUV = rast.addOrSearchGlyph(
+                                    &app::g_threadPool.scratch(),
+                                    StdAllocator::inst(),
+                                    &app::g_font, ch
+                                );
+                            }
+                            catch (const AllocException& ex)
+                            {
+                                ex.printErrorMsg(stderr);
+                                continue;
+                            }
     
+                            if (!mFoundUV) continue;
                             const auto [u, v] = mFoundUV.value();
     
                             const Span2D<u8> spAtlas = rast.atlasSpan();
