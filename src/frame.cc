@@ -25,15 +25,16 @@ fillBg(
     const int y,
     const int width,
     const int height,
-    u32 color
+    const u32 color
 )
 {
     if (x < 0 || y < 0 || width < 0 || height < 0) return;
 
     const int maxWidth = utils::min(width, sp.width() - x);
     if (maxWidth <= 0) return;
+    const int maxHeight = utils::min(height, sp.height() - y);
 
-    for (int yOff = y; yOff < height + y; ++yOff)
+    for (int yOff = y; yOff < maxHeight + y; ++yOff)
     {
         simd::i32Fillx4(Span<i32> {
                 reinterpret_cast<i32*>(&sp(x, yOff)),
@@ -41,6 +42,53 @@ fillBg(
             },
             color
         );
+    }
+}
+
+static void
+fillBgOutline(
+    Span2D<u32> sp,
+    const int x,
+    const int y,
+    const int width,
+    const int height,
+    const int thick,
+    const u32 color
+)
+{
+    if (x < 0 || y < 0 || width < 0 || height < 0) return;
+
+    if (thick > height) return;
+    const int maxWidth = utils::min(width, sp.width() - x);
+    if (maxWidth <= 0) return;
+    const int maxHeight = utils::min(height, sp.height() - y);
+
+    /* left */
+    for (int yOff = y; yOff < maxHeight + y; ++yOff)
+    {
+        for (int xOff = x; xOff < x + thick; ++xOff)
+            sp(xOff, yOff) = color;
+    }
+
+    /* right */
+    for (int yOff = y; yOff < maxHeight + y; ++yOff)
+    {
+        for (int xOff = x + (width - thick); xOff < width + x; ++xOff)
+            sp(xOff, yOff) = color;
+    }
+
+    /* top */
+    for (int yOff = y; yOff < y + thick; ++yOff)
+    {
+        for (int xOff = x; xOff < x + width; ++xOff)
+            sp(xOff, yOff) = color;
+    }
+
+    /* bop */
+    for (int yOff = y + (height - thick); yOff < maxHeight + y; ++yOff)
+    {
+        for (int xOff = x; xOff < x + width; ++xOff)
+            sp(xOff, yOff) = color;
     }
 }
 
@@ -283,7 +331,10 @@ run()
                             /* lil square */
                             const int height = rBar.m_height / 5;
                             const int yOff2 = height / 1.5;
-                            fillBg(spBuffer, xOff, yOff2, height, height, fgColor);
+
+                            if (tag.eState == ZDWL_IPC_OUTPUT_V2_TAG_STATE_ACTIVE)
+                                fillBg(spBuffer, xOff, yOff2, height, height, fgColor);
+                            else fillBgOutline(spBuffer, xOff, yOff2, height, height, 1, fgColor);
                         }
 
                         xOff += xScale / 2;
