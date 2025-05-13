@@ -117,6 +117,14 @@ constexpr ColorScheme ColorSchemePreset0 {
 };
 
 constexpr ColorScheme ColorSchemePreset1 {
+    .tag       {.fg = 0xffbbbbbb, .bg = 0xff222222},
+    .activeTag {.fg = 0xffeeeeee, .bg = 0xff005577},
+    .urgentTag {.fg = 0xffeeeeee, .bg = 0xff222222},
+    .title     {.fg = 0xffeeeeee, .bg = 0xff005577},
+    .status    {.fg = 0xffbbbbbb, .bg = 0xff222222},
+};
+
+constexpr ColorScheme ColorSchemePreset2 {
     .tag       {.fg = 0xff000000, .bg = 0xff0000ff},
     .activeTag {.fg = 0xff000000, .bg = 0xff00ff00},
     .urgentTag {.fg = 0xff000000, .bg = 0xffff0000},
