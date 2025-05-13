@@ -14,6 +14,8 @@ union ImagePixelARGBle
     struct { adt::u8 b, g, r, a; };
     adt::u32 data;
     adt::i32 iData;
+
+    ImagePixelARGBle& operator+=(const ImagePixelARGBle other) { data += other.data; return *this; }
 };
 
 union ImagePixelRGB

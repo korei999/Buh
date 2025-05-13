@@ -194,71 +194,78 @@ Rasterizer::rasterizeGlyph(ScratchBuffer* pScratch, const Parser& font, const Gl
     const f32 yMin = font.m_head.yMin;
 
     Array<f32, 64> aIntersections {};
-    Span2D<u8> spAtlas = m_atlas.spanMono();
+    Span2D<ImagePixelARGBle> spAtlas = atlasSpan();
 
     const f32 hScale = static_cast<f32>(m_scale) / static_cast<f32>(xMax - xMin);
     const f32 vScale = static_cast<f32>(m_scale) / static_cast<f32>(yMax - yMin);
 
+    constexpr ssize scanlineSubdiv = 5;
+    constexpr f32 alphaWeight = 255.0f / scanlineSubdiv;
+    constexpr f32 stepPerScanline = 1.0f / scanlineSubdiv;
+
     for (ssize row = 0; row < static_cast<ssize>(m_scale); ++row)
     {
-        aIntersections.setSize(0);
-        const f32 scanline = static_cast<f32>(row);
-
-        for (ssize pointI = 1; pointI < vCurvyPoints.size(); ++pointI)
+        for (ssize subRow = 0; subRow < scanlineSubdiv; ++subRow)
         {
-            const f32 x0 = (vCurvyPoints[pointI - 1].pos.x) * hScale;
-            const f32 x1 = (vCurvyPoints[pointI - 0].pos.x) * hScale;
+            aIntersections.setSize(0);
+            const f32 scanline = static_cast<f32>(row) + subRow*stepPerScanline;
 
-            const f32 y0 = (vCurvyPoints[pointI - 1].pos.y - yMin) * vScale;
-            const f32 y1 = (vCurvyPoints[pointI - 0].pos.y - yMin) * vScale;
-
-            if (vCurvyPoints[pointI].bEndOfCurve)
-                ++pointI;
-
-            const auto [smallerY, biggerY] = utils::minMax(y0, y1);
-
-            if (scanline <= smallerY || scanline > biggerY) continue;
-
-            /* Scanline: horizontal line that intersects edges. Find X for scanline Y.
-             * |
-             * |      /(x1, y1)
-             * |____/______________inter(x, y)
-             * |  /
-             * |/(x0, y0)
-             * +------------ */
-
-            const f32 dx = x1 - x0;
-            const f32 dy = y1 - y0;
-            const f32 interX = (scanline - y1)/dy * dx + x1;
-
-            aIntersections.push(interX);
-        }
-
-        if (aIntersections.size() > 1)
-        {
-            sort::insertion(&aIntersections);
-
-            for (ssize intI = 1; intI < aIntersections.size(); intI += 2)
+            for (ssize pointI = 1; pointI < vCurvyPoints.size(); ++pointI)
             {
-                const f32 start = aIntersections[intI - 1];
-                const int startI = start;
-                const f32 startCovered = (startI + 1) - start;
+                const f32 x0 = (vCurvyPoints[pointI - 1].pos.x) * hScale;
+                const f32 x1 = (vCurvyPoints[pointI - 0].pos.x) * hScale;
 
-                const f32 end = aIntersections[intI];
-                const int endIdx = end;
-                const f32 endCovered = end - endIdx;
+                const f32 y0 = (vCurvyPoints[pointI - 1].pos.y - yMin) * vScale;
+                const f32 y1 = (vCurvyPoints[pointI - 0].pos.y - yMin) * vScale;
 
-                for (int col = startI + 1; col < endIdx; ++col)
-                    spAtlas(xOff + col, yOff + row) = 255;
+                if (vCurvyPoints[pointI].bEndOfCurve)
+                    ++pointI;
 
-                if (startI == endIdx)
+                const auto [smallerY, biggerY] = utils::minMax(y0, y1);
+
+                if (scanline <= smallerY || scanline > biggerY) continue;
+
+                /* Scanline: horizontal line that intersects edges. Find X for scanline Y.
+                 * |
+                 * |      /(x1, y1)
+                 * |____/______________inter(x, y)
+                 * |  /
+                 * |/(x0, y0)
+                 * +------------ */
+
+                const f32 dx = x1 - x0;
+                const f32 dy = y1 - y0;
+                const f32 interX = (scanline - y1)/dy * dx + x1;
+
+                aIntersections.push(interX);
+            }
+
+            if (aIntersections.size() > 1)
+            {
+                sort::insertion(&aIntersections);
+
+                for (ssize intI = 1; intI < aIntersections.size(); intI += 2)
                 {
-                    spAtlas(xOff + startI, yOff + row) += 255.0f * startCovered;
-                }
-                else
-                {
-                    spAtlas(xOff + startI, yOff + row) += 255.0f * startCovered;
-                    spAtlas(xOff + endIdx, yOff + row) += 255.0f * endCovered;
+                    const f32 start = aIntersections[intI - 1];
+                    const int startI = start;
+                    const f32 startCovered = (startI + 1) - start;
+
+                    const f32 end = aIntersections[intI];
+                    const int endIdx = end;
+                    const f32 endCovered = end - endIdx;
+
+                    for (int col = startI + 1; col < endIdx; ++col)
+                        spAtlas(xOff + col, yOff + row).data += alphaWeight;
+
+                    if (startI == endIdx)
+                    {
+                        spAtlas.tryAtAdd(xOff + startI, yOff + row, ImagePixelARGBle {.data = u32(alphaWeight*startCovered)});
+                    }
+                    else
+                    {
+                        spAtlas.tryAtAdd(xOff + startI, yOff + row, ImagePixelARGBle {.data = u32(alphaWeight*startCovered)});
+                        spAtlas.tryAtAdd(xOff + endIdx, yOff + row, ImagePixelARGBle {.data = u32(alphaWeight*endCovered)});
+                    }
                 }
             }
         }
@@ -291,8 +298,8 @@ Rasterizer::addOrSearchGlyph(ScratchBuffer* pScratch, IAllocator* pAlloc, Parser
         {
             LOG_BAD("REALLOC: yOff: {}, height: {}\n", m_yOffAtlas, m_atlas.m_height - yStep);
 
-            m_atlas.m_uData.pMono = pAlloc->reallocV<u8>(
-                m_atlas.m_uData.pMono,
+            m_atlas.m_uData.pARGBle = pAlloc->reallocV<ImagePixelARGBle>(
+                m_atlas.m_uData.pARGBle,
                 m_atlas.m_width * m_atlas.m_height,
                 m_atlas.m_width * (m_atlas.m_height*2)
             );
@@ -307,7 +314,7 @@ Rasterizer::addOrSearchGlyph(ScratchBuffer* pScratch, IAllocator* pAlloc, Parser
 void
 Rasterizer::destroy(adt::IAllocator* pAlloc)
 {
-    pAlloc->free(m_atlas.m_uData.pMono);
+    pAlloc->free(m_atlas.m_uData.pARGBle);
     m_mapCodeToUV.destroy(pAlloc);
     *this = {};
 }
@@ -335,8 +342,8 @@ Rasterizer::rasterizeAscii(IAllocator* pAlloc, Parser* pFont, IThreadPoolWithMem
 
     const ssize size = width * scale * height * scale;;
 
-    m_atlas.m_eType = Image::TYPE::MONO;
-    m_atlas.m_uData.pMono = pAlloc->zallocV<u8>(size);
+    m_atlas.m_eType = Image::TYPE::ARGB_LE;
+    m_atlas.m_uData.pARGBle = pAlloc->zallocV<ImagePixelARGBle>(size);
     m_atlas.m_width = width * scale;
     m_atlas.m_height = height * scale;
 
