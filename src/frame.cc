@@ -283,11 +283,6 @@ run()
                             /* lil square */
                             const int height = rBar.m_height / 5;
                             const int yOff2 = height / 1.5;
-                            // for (int y = 0; y < height; ++y)
-                            // {
-                            //     for (int x = 0; x < height; ++x)
-                            //         spBuffer(x + xOff, y + yOff2) = fgColor;
-                            // }
                             fillBg(spBuffer, xOff, yOff2, height, height, fgColor);
                         }
 
