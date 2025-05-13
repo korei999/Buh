@@ -84,7 +84,7 @@ Reader::read(adt::StringView sBMP)
 {
     using namespace adt;
 
-    if (sBMP.size() < static_cast<ssize>(sizeof(Header) + sizeof(BitmapInfoHeader)))
+    if (sBMP.size() < static_cast<isize>(sizeof(Header) + sizeof(BitmapInfoHeader)))
         return false;
 
     m_sBMP = sBMP;
@@ -227,7 +227,7 @@ writeToFile(const Image img, const char* ntsFile)
 namespace adt::print
 {
 
-inline ssize
+inline isize
 formatToContext(Context ctx, FormatArgs fmtArgs, bmp::COMPRESSION_METHOD_ID eCompressionMethod) noexcept
 {
     constexpr String asMethods[] {

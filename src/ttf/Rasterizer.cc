@@ -35,7 +35,7 @@ pointsWithMissingOnCurve(IAllocator* pAlloc, const Glyph& g)
     bool bCurrOnCurve = false;
     bool bPrevOnCurve = false;
 
-    [[maybe_unused]] ssize firstInCurveIdx = 0;
+    [[maybe_unused]] isize firstInCurveIdx = 0;
 
     Vec<PointOnCurve> vPoints(pAlloc, size);
     for (const auto& p : aGlyphPoints)
@@ -115,11 +115,11 @@ makeItCurvy(IAllocator* pAlloc, const Vec<PointOnCurve>& aNonCurvyPoints, CurveE
     simd::i16Fillx8(pEndIdxs->aIdxs, -1);
     i16 endIdx = 0;
 
-    ssize firstInCurveIdx = 0;
+    isize firstInCurveIdx = 0;
     bool bPrevOnCurve = true;
     for (auto& p : aNonCurvyPoints)
     {
-        ssize idx = aNonCurvyPoints.idx(&p);
+        isize idx = aNonCurvyPoints.idx(&p);
 
         if (p.bEndOfCurve)
         {
@@ -196,21 +196,21 @@ Rasterizer::rasterizeGlyph(ScratchBuffer* pScratch, const Parser& font, const Gl
     Array<f32, 64> aIntersections {};
     Span2D<u8> spAtlas = atlasSpan();
 
-    const f32 hScale = static_cast<f32>(m_scale) / static_cast<f32>(xMax - xMin);
-    const f32 vScale = static_cast<f32>(m_scale) / static_cast<f32>(yMax - yMin);
+    const f32 hScale = f32(m_scale) / f32(xMax - xMin);
+    const f32 vScale = f32(m_scale) / f32(yMax - yMin);
 
-    constexpr ssize scanlineSubdiv = 5;
+    constexpr isize scanlineSubdiv = 5;
     constexpr f32 alphaWeight = 255.0f / scanlineSubdiv;
     constexpr f32 stepPerScanline = 1.0f / scanlineSubdiv;
 
-    for (ssize row = 0; row < static_cast<ssize>(m_scale); ++row)
+    for (isize row = 0; row < isize(m_scale); ++row)
     {
-        for (ssize subRow = 0; subRow < scanlineSubdiv; ++subRow)
+        for (isize subRow = 0; subRow < scanlineSubdiv; ++subRow)
         {
             aIntersections.setSize(0);
             const f32 scanline = row + (subRow + 0.5f)*stepPerScanline;
 
-            for (ssize pointI = 1; pointI < vCurvyPoints.size(); ++pointI)
+            for (isize pointI = 1; pointI < vCurvyPoints.size(); ++pointI)
             {
                 const f32 x0 = (vCurvyPoints[pointI - 1].pos.x) * hScale;
                 const f32 x1 = (vCurvyPoints[pointI - 0].pos.x) * hScale;
@@ -244,7 +244,7 @@ Rasterizer::rasterizeGlyph(ScratchBuffer* pScratch, const Parser& font, const Gl
             {
                 sort::insertion(&aIntersections);
 
-                for (ssize intI = 1; intI < aIntersections.size(); intI += 2)
+                for (isize intI = 1; intI < aIntersections.size(); intI += 2)
                 {
                     const f32 start = aIntersections[intI - 1];
                     const int startI = start;
@@ -337,10 +337,10 @@ Rasterizer::rasterizeAscii(IAllocator* pAlloc, Parser* pFont, IThreadPoolWithMem
     const int iScale = std::round(scale);
     m_scale = scale;
 
-    constexpr ssize width = 10;
-    constexpr ssize height = 10;
+    constexpr isize width = 10;
+    constexpr isize height = 10;
 
-    const ssize size = width * scale * height * scale;;
+    const isize size = width * scale * height * scale;;
 
     m_atlas.m_eType = Image::TYPE::MONO;
     m_atlas.m_uData.pMono = pAlloc->zallocV<u8>(size);

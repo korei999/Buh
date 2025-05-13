@@ -25,7 +25,7 @@ struct Client
 
         wl_shm_pool* m_pShmPool {};
         adt::u8* m_pPoolData {};
-        adt::ssize m_poolSize {};
+        adt::isize m_poolSize {};
 
         int m_width {};
         int m_height {};

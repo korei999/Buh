@@ -272,7 +272,7 @@ Client::registryGlobalRemove(
     [[maybe_unused]] u32 name
 )
 {
-    for (ssize i = 0; i < m_vpBars.size(); ++i)
+    for (isize i = 0; i < m_vpBars.size(); ++i)
     {
         Bar* pBar = m_vpBars[i];
         if (name == pBar->m_outputRegistryName)

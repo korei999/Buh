@@ -21,7 +21,7 @@ Image::cloneToRGBA(adt::IAllocator* pAlloc)
     {
         case Image::TYPE::RGB:
         {
-            for (ssize i = 0; i < m_width * m_height; ++i)
+            for (isize i = 0; i < m_width * m_height; ++i)
             {
                 const auto& pix = m_uData.pRGB[i];
 
@@ -45,7 +45,7 @@ Image::cloneToRGBA(adt::IAllocator* pAlloc)
 
         case Image::TYPE::MONO:
         {
-            for (ssize i = 0; i < m_width * m_height; ++i)
+            for (isize i = 0; i < m_width * m_height; ++i)
             {
                 const auto& pix = m_uData.pMono[i];
 
@@ -76,11 +76,11 @@ Image::swapRedBlue()
 
         case Image::TYPE::RGBA:
         {
-            const ssize size = m_width * m_height;
-            ssize i = 0;
+            const isize size = m_width * m_height;
+            isize i = 0;
 
 #ifdef ADT_AVX2
-            const ssize divLen = size / 8;
+            const isize divLen = size / 8;
             auto* pData = reinterpret_cast<__m256i*>(m_uData.pRGBA);
             for (; i < divLen; ++i, ++pData)
             {
@@ -95,7 +95,7 @@ Image::swapRedBlue()
             }
             i = divLen * 8;
 #else
-            const ssize divLen = size / 4;
+            const isize divLen = size / 4;
             auto* pData = reinterpret_cast<__m128i*>(m_uData.pRGBA);
             for (; i < divLen; ++i, ++pData)
             {
@@ -118,8 +118,8 @@ Image::swapRedBlue()
 
         case Image::TYPE::RGB:
         {
-            const ssize size = m_width * m_height;
-            for (ssize i = 0; i < size; ++i)
+            const isize size = m_width * m_height;
+            for (isize i = 0; i < size; ++i)
                 utils::swap(&m_uData.pRGB[i].r, &m_uData.pRGB[i].b);
         };
         break;

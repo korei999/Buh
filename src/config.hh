@@ -1,5 +1,9 @@
 #pragma once
 
+#if __has_include("configUser.hh")
+    #include "configUser.hh"
+#else
+
 #include "adt/String.hh"
 #include "ColorScheme.hh"
 
@@ -128,3 +132,5 @@ constexpr ColorScheme aColorSchemes[] {
 inline ColorScheme inl_colorScheme = aColorSchemes[0];
 
 } /* namespace config */
+
+#endif

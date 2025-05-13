@@ -173,8 +173,8 @@ run()
 
                         VecManaged<Pair<StringView, int>> vEntryStrings {&buffer};
 
-                        const ssize last = utils::size(config::inl_aStatusEntries) - 1;
-                        for (ssize i = last; i >= 0; --i)
+                        const isize last = utils::size(config::inl_aStatusEntries) - 1;
+                        for (isize i = last; i >= 0; --i)
                         {
                             config::StatusEntry& entry = config::inl_aStatusEntries[i];
 
@@ -256,9 +256,9 @@ run()
     
                     for (const Tag& tag : rBar.m_vTags)
                     {
-                        const ssize tagI = rBar.m_vTags.idx(&tag);
+                        const isize tagI = rBar.m_vTags.idx(&tag);
                         char aTagStringBuff[4] {};
-                        const ssize n = print::toSpan(aTagStringBuff, "{}", 1 + tagI);
+                        const isize n = print::toSpan(aTagStringBuff, "{}", 1 + tagI);
                         const int tagXBegin = xOff;
                         u32 fgColor = config::inl_colorScheme.tag.fg;
                         u32 bgColor = config::inl_colorScheme.tag.bg;

@@ -10,3 +10,4 @@ CMakeFiles/
 Makefile
 MonkeGraphics
 cmake_install.cmake
+src/configUser.hh

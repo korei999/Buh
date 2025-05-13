@@ -102,7 +102,7 @@ Parser::readFWord()
 }
 
 Glyph*
-Parser::readGlyphFromOffset(ssize offset)
+Parser::readGlyphFromOffset(isize offset)
 {
     const auto fGlyf = searchTable("glyf");
     ADT_ASSERT(fGlyf, " ");
@@ -377,7 +377,7 @@ Parser::readCmapTable()
 u32
 Parser::getGlyphOffset(u32 idx)
 {
-    const ssize savedPos = m_bin.m_pos;
+    const isize savedPos = m_bin.m_pos;
     defer(m_bin.m_pos = savedPos);
 
     auto fLoca = searchTable("loca");
@@ -543,7 +543,7 @@ Parser::getGlyphIdx(u16 code)
 Glyph*
 Parser::readGlyph(u32 code)
 {
-    const ssize savedPos = m_bin.m_pos;
+    const isize savedPos = m_bin.m_pos;
     defer(m_bin.m_pos = savedPos);
 
     const auto glyphIdx = getGlyphIdx(code);
