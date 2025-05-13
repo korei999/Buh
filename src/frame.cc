@@ -136,7 +136,7 @@ run()
                             {
                                 for (int x = xOffset + thisXOff; x < maxx; ++x)
                                 {
-                                    const u8 val = spAtlas((x - xOffset - thisXOff) + u, y + v).data;
+                                    const u8 val = spAtlas((x - xOffset - thisXOff) + u, y + v).b;
                                     if (val == 0) continue;
 
                                     auto& rDest = reinterpret_cast<ImagePixelARGBle&>(spBuffer(

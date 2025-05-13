@@ -251,20 +251,20 @@ Rasterizer::rasterizeGlyph(ScratchBuffer* pScratch, const Parser& font, const Gl
                     const f32 startCovered = (startI + 1) - start;
 
                     const f32 end = aIntersections[intI];
-                    const int endIdx = end;
-                    const f32 endCovered = end - endIdx;
+                    const int endI = end;
+                    const f32 endCovered = end - endI;
 
-                    for (int col = startI + 1; col < endIdx; ++col)
-                        spAtlas(xOff + col, yOff + row).data += alphaWeight;
+                    for (int col = startI + 1; col < endI; ++col)
+                        spAtlas(xOff + col, yOff + row).b += alphaWeight;
 
-                    if (startI == endIdx)
+                    if (startI == endI)
                     {
-                        spAtlas.tryAtAdd(xOff + startI, yOff + row, ImagePixelARGBle {.data = u32(alphaWeight*startCovered)});
+                        spAtlas.tryAt(xOff + startI, yOff + row, [&](ImagePixelARGBle& pix) { pix.b += u8(alphaWeight*startCovered); });
                     }
                     else
                     {
-                        spAtlas.tryAtAdd(xOff + startI, yOff + row, ImagePixelARGBle {.data = u32(alphaWeight*startCovered)});
-                        spAtlas.tryAtAdd(xOff + endIdx, yOff + row, ImagePixelARGBle {.data = u32(alphaWeight*endCovered)});
+                        spAtlas.tryAt(xOff + startI, yOff + row, [&](ImagePixelARGBle& pix) { pix.b += u8(alphaWeight*startCovered); });
+                        spAtlas.tryAt(xOff + endI, yOff + row, [&](ImagePixelARGBle& pix) { pix.b += u8(alphaWeight*endCovered); });
                     }
                 }
             }
