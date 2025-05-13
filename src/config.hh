@@ -124,14 +124,6 @@ constexpr ColorScheme ColorSchemePreset1 {
     .status    {.fg = 0xffbbbbbb, .bg = 0xff222222},
 };
 
-constexpr ColorScheme ColorSchemePreset2 {
-    .tag       {.fg = 0xff000000, .bg = 0xff0000ff},
-    .activeTag {.fg = 0xff000000, .bg = 0xff00ff00},
-    .urgentTag {.fg = 0xff000000, .bg = 0xffff0000},
-    .title     {.fg = 0xff000000, .bg = 0xffffff00},
-    .status    {.fg = 0xff000000, .bg = 0xffff00ff},
-};
-
 constexpr ColorScheme colorScheme = ColorSchemePreset0;
 
 } /* namespace config */
