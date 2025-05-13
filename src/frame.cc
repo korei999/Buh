@@ -322,9 +322,8 @@ run()
                             bgColor = config::inl_colorScheme.activeTag.bg;
                         }
 
-                        xOff += xScale / 4;
-
-                        fillBg(spBuffer, tagXBegin, 0, (7*xScale)/4 + n*xScale, yScale, bgColor);
+                        /* tg bg fill */
+                        fillBg(spBuffer, tagXBegin, 0, xScale + xScale*n + xScale, yScale, bgColor);
 
                         if (tag.nClients > 0)
                         {
@@ -332,12 +331,13 @@ run()
                             const int height = rBar.m_height / 5;
                             const int yOff2 = height / 1.5;
 
+                            /* xScale/4 further */
                             if (tag.eState == ZDWL_IPC_OUTPUT_V2_TAG_STATE_ACTIVE)
-                                fillBg(spBuffer, xOff, yOff2, height, height, fgColor);
-                            else fillBgOutline(spBuffer, xOff, yOff2, height, height, 1, fgColor);
+                                fillBg(spBuffer, xOff + xScale/4, yOff2, height, height, fgColor);
+                            else fillBgOutline(spBuffer, xOff + xScale/4, yOff2, height, height, 1, fgColor);
                         }
 
-                        xOff += xScale / 2;
+                        xOff += xScale;
                         xOff += clDrawString(xOff, StringView {aTagStringBuff, n}, fgColor, bgColor, xOffStatus);
                         xOff += xScale;
     
@@ -359,6 +359,7 @@ run()
                     xOff += clDrawString(xOff, rBar.m_sfLayoutIcon, config::inl_colorScheme.status.fg, config::inl_colorScheme.tag.bg, xOffStatus);
                     xOff += xScale;
 
+                    /* title bg fill */
                     fillBg(spBuffer, xOff, 0, (xOffStatus - xOff) + xScale, yScale, config::inl_colorScheme.title.bg);
 
                     xOff += xScale;
