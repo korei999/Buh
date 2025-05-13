@@ -30,6 +30,7 @@ option(OPT_SSE4_2 "" ON)
 option(OPT_AVX2 "" OFF)
 option(OPT_MARCH_NATIVE "" OFF)
 
+option(OPT_USER_CONFIG "" ON)
 option(OPT_IPC_KBLAYOUT "" ON)
 option(OPT_MIMALLOC "" OFF)
 option(OPT_FAST_MATH "" OFF)
@@ -40,6 +41,10 @@ option(OPT_DBG_TTF "" OFF)
 
 if (OPT_ANALYZE)
     add_compile_options(-fanalyzer)
+endif()
+
+if (OPT_USER_CONFIG)
+    add_definitions("-DOPT_USER_CONFIG")
 endif()
 
 if (OPT_IPC_KBLAYOUT)
