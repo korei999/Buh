@@ -28,11 +28,16 @@ fillBg(
     u32 color
 )
 {
-    for (int yOff = y; yOff < height; ++yOff)
+    if (x < 0 || y < 0 || width < 0 || height < 0) return;
+
+    const int maxWidth = utils::min(width, sp.width() - x);
+    if (maxWidth <= 0) return;
+
+    for (int yOff = y; yOff < height + y; ++yOff)
     {
         simd::i32Fillx4(Span<i32> {
                 reinterpret_cast<i32*>(&sp(x, yOff)),
-                width
+                maxWidth
             },
             color
         );
@@ -136,6 +141,8 @@ run()
                             {
                                 for (int x = xOffset + thisXOff; x < maxx; ++x)
                                 {
+                                    if (x < 0) break;
+
                                     const u8 val = spAtlas((x - xOffset - thisXOff) + u, y + v).b;
                                     if (val == 0) continue;
 
@@ -161,7 +168,7 @@ run()
                     {
                         auto clDrawEntry = [&](const StringView sv, const int offset)
                         {
-                            clDrawString(offset, sv, config::colorScheme.status.fg, config::colorScheme.status.bg);
+                            clDrawString(offset, sv, config::inl_colorScheme.status.fg, config::inl_colorScheme.status.bg);
                         };
 
                         VecManaged<Pair<StringView, int>> vEntryStrings {&buffer};
@@ -239,7 +246,7 @@ run()
                             xOffStatus -= xScale*2;
                         }
 
-                        fillBg(spBuffer, xOffStatus, 0, rBar.m_width - xOffStatus, yScale, config::colorScheme.status.bg);
+                        fillBg(spBuffer, xOffStatus, 0, rBar.m_width - xOffStatus, yScale, config::inl_colorScheme.status.bg);
                         for (auto [sv, offset] : vEntryStrings) clDrawEntry(sv, offset);
                     }
                     catch (const AllocException& ex)
@@ -253,41 +260,35 @@ run()
                         char aTagStringBuff[4] {};
                         const ssize n = print::toSpan(aTagStringBuff, "{}", 1 + tagI);
                         const int tagXBegin = xOff;
-                        u32 fgColor = config::colorScheme.tag.fg;
-                        u32 bgColor = config::colorScheme.tag.bg;
+                        u32 fgColor = config::inl_colorScheme.tag.fg;
+                        u32 bgColor = config::inl_colorScheme.tag.bg;
 
                         if (tag.eState == ZDWL_IPC_OUTPUT_V2_TAG_STATE_URGENT)
                         {
-                            fgColor = config::colorScheme.urgentTag.fg;
-                            bgColor = config::colorScheme.urgentTag.bg;
+                            fgColor = config::inl_colorScheme.urgentTag.fg;
+                            bgColor = config::inl_colorScheme.urgentTag.bg;
                         }
                         else if (tag.eState == ZDWL_IPC_OUTPUT_V2_TAG_STATE_ACTIVE)
                         {
-                            fgColor = config::colorScheme.activeTag.fg;
-                            bgColor = config::colorScheme.activeTag.bg;
+                            fgColor = config::inl_colorScheme.activeTag.fg;
+                            bgColor = config::inl_colorScheme.activeTag.bg;
                         }
 
                         xOff += xScale / 4;
 
-                        for (int y = 0; y < yScale; ++y)
-                        {
-                            simd::i32Fillx4({
-                                    reinterpret_cast<i32*>(&spBuffer(tagXBegin, y)),
-                                    (7*xScale)/4 + n*xScale /* aka: xScale/4 + xScale/2 + (n*xScale) + xScale */
-                                }, bgColor
-                            );
-                        }
+                        fillBg(spBuffer, tagXBegin, 0, (7*xScale)/4 + n*xScale, yScale, bgColor);
 
                         if (tag.nClients > 0)
                         {
                             /* lil square */
                             const int height = rBar.m_height / 5;
                             const int yOff2 = height / 1.5;
-                            for (int y = 0; y < height; ++y)
-                            {
-                                for (int x = 0; x < height; ++x)
-                                    spBuffer(x + xOff, y + yOff2) = fgColor;
-                            }
+                            // for (int y = 0; y < height; ++y)
+                            // {
+                            //     for (int x = 0; x < height; ++x)
+                            //         spBuffer(x + xOff, y + yOff2) = fgColor;
+                            // }
+                            fillBg(spBuffer, xOff, yOff2, height, height, fgColor);
                         }
 
                         xOff += xScale / 2;
@@ -306,23 +307,16 @@ run()
                         }
                     }
 
-                    for (int y = 0; y < yScale; ++y)
-                    {
-                        simd::i32Fillx4({
-                                reinterpret_cast<i32*>(&spBuffer(xOff, y)),
-                                rBar.m_sfLayoutIcon.size()*xScale + xScale*2
-                            }, config::colorScheme.tag.bg
-                        );
-                    }
+                    fillBg(spBuffer, xOff, 0, rBar.m_sfLayoutIcon.size()*xScale + xScale*2, yScale, config::inl_colorScheme.tag.bg);
 
                     xOff += xScale;
-                    xOff += clDrawString(xOff, rBar.m_sfLayoutIcon, config::colorScheme.status.fg, config::colorScheme.tag.bg, xOffStatus);
+                    xOff += clDrawString(xOff, rBar.m_sfLayoutIcon, config::inl_colorScheme.status.fg, config::inl_colorScheme.tag.bg, xOffStatus);
                     xOff += xScale;
 
-                    fillBg(spBuffer, xOff, 0, (xOffStatus - xOff) + xScale, yScale, config::colorScheme.title.bg);
+                    fillBg(spBuffer, xOff, 0, (xOffStatus - xOff) + xScale, yScale, config::inl_colorScheme.title.bg);
 
                     xOff += xScale;
-                    xOff += clDrawString(xOff, rBar.m_sfTitle, config::colorScheme.title.fg, config::colorScheme.title.bg, xOffStatus);
+                    xOff += clDrawString(xOff, rBar.m_sfTitle, config::inl_colorScheme.title.fg, config::inl_colorScheme.title.bg, xOffStatus);
                 }
     
                 wl_surface_attach(rBar.m_pSurface, rBar.m_pBuffer, 0, 0);

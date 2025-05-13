@@ -108,22 +108,23 @@ inline StatusEntry inl_aStatusEntries[] {
 #endif
 };
 
-constexpr ColorScheme ColorSchemePreset0 {
-    .tag       {.fg = 0xff555555, .bg = 0xff777777},
-    .activeTag {.fg = 0xff000000, .bg = 0xff777777},
-    .urgentTag {.fg = 0xff000000, .bg = 0xffac4242},
-    .title     {.fg = 0xff000000, .bg = 0xff777777},
-    .status    {.fg = 0xff000000, .bg = 0xff777777},
+constexpr ColorScheme aColorSchemes[] {
+    {
+        .tag       {.fg = 0xffbbbbbb, .bg = 0xff222222},
+        .activeTag {.fg = 0xffeeeeee, .bg = 0xff005577},
+        .urgentTag {.fg = 0xff000000, .bg = 0xffff0000},
+        .title     {.fg = 0xffeeeeee, .bg = 0xff005577},
+        .status    {.fg = 0xffbbbbbb, .bg = 0xff222222},
+    },
+    {
+        .tag       {.fg = 0xff555555, .bg = 0xff777777},
+        .activeTag {.fg = 0xff000000, .bg = 0xff777777},
+        .urgentTag {.fg = 0xff000000, .bg = 0xffac4242},
+        .title     {.fg = 0xff000000, .bg = 0xff777777},
+        .status    {.fg = 0xff000000, .bg = 0xff777777},
+    },
 };
 
-constexpr ColorScheme ColorSchemePreset1 {
-    .tag       {.fg = 0xffbbbbbb, .bg = 0xff222222},
-    .activeTag {.fg = 0xffeeeeee, .bg = 0xff005577},
-    .urgentTag {.fg = 0xff000000, .bg = 0xffff0000},
-    .title     {.fg = 0xffeeeeee, .bg = 0xff005577},
-    .status    {.fg = 0xffbbbbbb, .bg = 0xff222222},
-};
-
-constexpr ColorScheme colorScheme = ColorSchemePreset0;
+inline ColorScheme inl_colorScheme = aColorSchemes[0];
 
 } /* namespace config */

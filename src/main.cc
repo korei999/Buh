@@ -1,4 +1,5 @@
 #include "app.hh"
+#include "config.hh"
 #include "frame.hh"
 
 #include "font.bin"
@@ -26,8 +27,7 @@ parseArgs(const int argc, const char* const* argv)
             {
                 if (i + 1 < argc)
                 {
-                    ++i;
-                    int num = atoi(argv[i]);
+                    int num = atoi(argv[++i]);
                     if (num == 0)
                     {
                         print::err("height must be '> 0', got: '{}'\n", num);
@@ -40,12 +40,29 @@ parseArgs(const int argc, const char* const* argv)
             {
                 if (i + 1 < argc)
                 {
-                    ++i;
-                    s_ntsFontPath = argv[i];
+                    s_ntsFontPath = argv[++i];
                 }
                 else
                 {
                     print::err("failed to parse font arg\n");
+                    exit(1);
+                }
+            }
+            else if (sv == "--preset")
+            {
+                if (i + 1 < argc)
+                {
+                    int num = atoi(argv[++i]);
+                    if (num < 0 || num >= utils::size(config::aColorSchemes))
+                    {
+                        print::err("index must be '>= 0 && < {}', got: '{}'\n", num, utils::size(config::aColorSchemes));
+                        exit(1);
+                    }
+                    config::inl_colorScheme = config::aColorSchemes[num];
+                }
+                else
+                {
+                    print::err("failed to parse color scheme index\n");
                     exit(1);
                 }
             }
