@@ -135,7 +135,7 @@ run()
                             if (!mFoundUV) continue;
                             const auto [u, v] = mFoundUV.value();
     
-                            const Span2D<ImagePixelARGBle> spAtlas = rast.atlasSpan();
+                            const Span2D<u8> spAtlas = rast.atlasSpan();
                             const int maxx = utils::min(utils::min(rBar.m_width, maxAbsX), xOffset + thisXOff + xScale);
                             for (int y = 0; y < yScale; ++y)
                             {
@@ -143,7 +143,7 @@ run()
                                 {
                                     if (x < 0) break;
 
-                                    const u8 val = spAtlas((x - xOffset - thisXOff) + u, y + v).b;
+                                    const u8 val = spAtlas((x - xOffset - thisXOff) + u, y + v);
                                     if (val == 0) continue;
 
                                     auto& rDest = reinterpret_cast<ImagePixelARGBle&>(spBuffer(

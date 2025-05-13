@@ -185,7 +185,7 @@ Rasterizer::rasterizeGlyph(ScratchBuffer* pScratch, const Parser& font, const Gl
 
     CurveEndIdx endIdxs {};
     Vec<PointOnCurve> vCurvyPoints = makeItCurvy(
-        &buff, pointsWithMissingOnCurve(&buff, glyph), &endIdxs, 6
+        &buff, pointsWithMissingOnCurve(&buff, glyph), &endIdxs, 10
     );
 
     const f32 xMax = font.m_head.xMax;
@@ -194,7 +194,7 @@ Rasterizer::rasterizeGlyph(ScratchBuffer* pScratch, const Parser& font, const Gl
     const f32 yMin = font.m_head.yMin;
 
     Array<f32, 64> aIntersections {};
-    Span2D<ImagePixelARGBle> spAtlas = atlasSpan();
+    Span2D<u8> spAtlas = atlasSpan();
 
     const f32 hScale = static_cast<f32>(m_scale) / static_cast<f32>(xMax - xMin);
     const f32 vScale = static_cast<f32>(m_scale) / static_cast<f32>(yMax - yMin);
@@ -208,7 +208,7 @@ Rasterizer::rasterizeGlyph(ScratchBuffer* pScratch, const Parser& font, const Gl
         for (ssize subRow = 0; subRow < scanlineSubdiv; ++subRow)
         {
             aIntersections.setSize(0);
-            const f32 scanline = static_cast<f32>(row) + subRow*stepPerScanline;
+            const f32 scanline = row + (subRow + 0.5f)*stepPerScanline;
 
             for (ssize pointI = 1; pointI < vCurvyPoints.size(); ++pointI)
             {
@@ -223,7 +223,7 @@ Rasterizer::rasterizeGlyph(ScratchBuffer* pScratch, const Parser& font, const Gl
 
                 const auto [smallerY, biggerY] = utils::minMax(y0, y1);
 
-                if (scanline <= smallerY || scanline > biggerY) continue;
+                if (scanline < smallerY || scanline >= biggerY) continue;
 
                 /* Scanline: horizontal line that intersects edges. Find X for scanline Y.
                  * |
@@ -255,16 +255,16 @@ Rasterizer::rasterizeGlyph(ScratchBuffer* pScratch, const Parser& font, const Gl
                     const f32 endCovered = end - endI;
 
                     for (int col = startI + 1; col < endI; ++col)
-                        spAtlas(xOff + col, yOff + row).b += alphaWeight;
+                        spAtlas(xOff + col, yOff + row) += alphaWeight;
 
                     if (startI == endI)
                     {
-                        spAtlas.tryAt(xOff + startI, yOff + row, [&](ImagePixelARGBle& pix) { pix.b += u8(alphaWeight*startCovered); });
+                        spAtlas.tryAt(xOff + startI, yOff + row, [&](u8& pix) { pix += u8(alphaWeight*startCovered); });
                     }
                     else
                     {
-                        spAtlas.tryAt(xOff + startI, yOff + row, [&](ImagePixelARGBle& pix) { pix.b += u8(alphaWeight*startCovered); });
-                        spAtlas.tryAt(xOff + endI, yOff + row, [&](ImagePixelARGBle& pix) { pix.b += u8(alphaWeight*endCovered); });
+                        spAtlas.tryAt(xOff + startI, yOff + row, [&](u8& pix) { pix += u8(alphaWeight*startCovered); });
+                        spAtlas.tryAt(xOff + endI, yOff + row, [&](u8& pix) { pix += u8(alphaWeight*endCovered); });
                     }
                 }
             }
@@ -298,8 +298,8 @@ Rasterizer::addOrSearchGlyph(ScratchBuffer* pScratch, IAllocator* pAlloc, Parser
         {
             LOG_BAD("REALLOC: yOff: {}, height: {}\n", m_yOffAtlas, m_atlas.m_height - yStep);
 
-            m_atlas.m_uData.pARGBle = pAlloc->reallocV<ImagePixelARGBle>(
-                m_atlas.m_uData.pARGBle,
+            m_atlas.m_uData.pMono = pAlloc->reallocV<u8>(
+                m_atlas.m_uData.pMono,
                 m_atlas.m_width * m_atlas.m_height,
                 m_atlas.m_width * (m_atlas.m_height*2)
             );
@@ -342,8 +342,8 @@ Rasterizer::rasterizeAscii(IAllocator* pAlloc, Parser* pFont, IThreadPoolWithMem
 
     const ssize size = width * scale * height * scale;;
 
-    m_atlas.m_eType = Image::TYPE::ARGB_LE;
-    m_atlas.m_uData.pARGBle = pAlloc->zallocV<ImagePixelARGBle>(size);
+    m_atlas.m_eType = Image::TYPE::MONO;
+    m_atlas.m_uData.pMono = pAlloc->zallocV<u8>(size);
     m_atlas.m_width = width * scale;
     m_atlas.m_height = height * scale;
 

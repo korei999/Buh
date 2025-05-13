@@ -35,8 +35,8 @@ struct Rasterizer
     adt::MapResult<adt::u32, UV> addOrSearchGlyph(adt::ScratchBuffer* pScratch, adt::IAllocator* pAlloc, Parser* pFont, adt::u32 code);
     void rasterizeGlyph(adt::ScratchBuffer* pScratch, const Parser& pFont, const Glyph& pGlyph, int xOff, int yOff);
 
-    adt::Span2D<ImagePixelARGBle> atlasSpan() { return m_atlas.spanARGBle(); }
-    const adt::Span2D<ImagePixelARGBle> atlasSpan() const { return m_atlas.spanARGBle(); }
+    adt::Span2D<adt::u8> atlasSpan() { return m_atlas.spanMono(); }
+    const adt::Span2D<adt::u8> atlasSpan() const { return m_atlas.spanMono(); }
 
     adt::MapResult<adt::u32, UV> searchGlyphAtlasUV(adt::u32 code) const { return m_mapCodeToUV.search(code); }
 
