@@ -133,4 +133,4 @@ inline ColorScheme inl_colorScheme = aColorSchemes[0];
 
 } /* namespace config */
 
-#endif
+#endif /* __has_include("configUser.hh") */
