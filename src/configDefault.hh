@@ -111,9 +111,9 @@ inline StatusEntry inl_aStatusEntries[] {
 constexpr ColorScheme aColorSchemes[] {
     {
         .tag       {.fg = 0xffbbbbbb, .bg = 0xff222222},
-        .activeTag {.fg = 0xffeeeeee, .bg = 0xff005577},
+        .activeTag {.fg = 0xffbbbbbb, .bg = 0xff005577},
         .urgentTag {.fg = 0xff000000, .bg = 0xffff0000},
-        .title     {.fg = 0xffeeeeee, .bg = 0xff005577},
+        .title     {.fg = 0xffbbbbbb, .bg = 0xff005577},
         .status    {.fg = 0xffbbbbbb, .bg = 0xff222222},
     },
     {
