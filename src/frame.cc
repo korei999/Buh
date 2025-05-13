@@ -322,7 +322,7 @@ run()
                             bgColor = config::inl_colorScheme.activeTag.bg;
                         }
 
-                        /* tg bg fill */
+                        /* tag bg */
                         fillBg(spBuffer, tagXBegin, 0, xScale + xScale*n + xScale, yScale, bgColor);
 
                         if (tag.nClients > 0)
@@ -353,13 +353,14 @@ run()
                         }
                     }
 
+                    /* layout icon bg */
                     fillBg(spBuffer, xOff, 0, rBar.m_sfLayoutIcon.size()*xScale + xScale*2, yScale, config::inl_colorScheme.tag.bg);
 
                     xOff += xScale;
                     xOff += clDrawString(xOff, rBar.m_sfLayoutIcon, config::inl_colorScheme.status.fg, config::inl_colorScheme.tag.bg, xOffStatus);
                     xOff += xScale;
 
-                    /* title bg fill */
+                    /* title bg */
                     fillBg(spBuffer, xOff, 0, (xOffStatus - xOff) + xScale, yScale, config::inl_colorScheme.title.bg);
 
                     xOff += xScale;
