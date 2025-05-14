@@ -273,8 +273,8 @@ run()
                                     auto clWrite = [&]
                                     {
                                         config::String64 sf = file::load<config::String64::CAP>(entry.nts);
-                                        if (entry.pfnFormatString)
-                                            sf = entry.pfnFormatString(sf.data());
+                                        if (entry.func.pfnFormatString)
+                                            sf = entry.func.pfnFormatString(sf.data());
 
                                         return sf;
                                     };
@@ -283,6 +283,33 @@ run()
                                     {
                                         entry.sfHolder = clWrite();
                                         entry.lastUpdateTimeMS = currTime;
+                                    }
+
+                                    xOffStatus -= entry.sfHolder.size() * xScale;
+                                    vEntryStrings.emplace(entry.sfHolder, xOffStatus);
+                                }
+                                break;
+
+                                case config::StatusEntry::TYPE::BATTERY:
+                                {
+                                    auto clWrite = [&]
+                                    {
+                                        config::String64 sf {};
+                                        battery::Report report = battery::Report::read(
+                                            entry.nts, &app::g_threadPool.scratch()
+                                        );
+
+                                        if (entry.func.pfnFormatBattery)
+                                            sf = entry.func.pfnFormatBattery(report);
+
+                                        return sf;
+                                    };
+
+                                    if (entry.lastUpdateTimeMS + entry.updateRateMS <= currTime)
+                                    {
+                                        entry.sfHolder = clWrite();
+                                        entry.lastUpdateTimeMS = currTime;
+                                        LOG_GOOD("UPDATE BATTERY\n");
                                     }
 
                                     xOffStatus -= entry.sfHolder.size() * xScale;

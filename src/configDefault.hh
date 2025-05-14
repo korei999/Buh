@@ -2,12 +2,14 @@
 
 #include "adt/String.hh"
 #include "ColorScheme.hh"
+#include "battery.hh"
 
 namespace config
 {
 
 using String64 = adt::StringFixed<64>;
 using PfnFormatString = String64 (*)(const char* ntsFormat);
+using PfnFormatBattery = String64 (*)(battery::Report report);
 
 struct StatusEntry
 {
@@ -17,6 +19,7 @@ struct StatusEntry
         DATE_TIME,
         KEYBOARD_LAYOUT,
         FILE_WATCH,
+        BATTERY,
     };
 
     /* */
@@ -24,7 +27,12 @@ struct StatusEntry
     const char* nts {};
     adt::f64 updateRateMS {};
     const char* ntsFormat {};
-    PfnFormatString pfnFormatString {};
+
+    union
+    {
+        PfnFormatString pfnFormatString;
+        PfnFormatBattery pfnFormatBattery;
+    } func {};
 
     String64 sfHolder {};
     adt::f64 lastUpdateTimeMS {};
@@ -67,8 +75,19 @@ struct StatusEntry
         return {
             .nts = ntsFilePath,
             .updateRateMS = updateRateMS,
-            .pfnFormatString = pfnFormatString,
+            .func {.pfnFormatString = pfnFormatString},
             .eType = TYPE::FILE_WATCH
+        };
+    }
+
+    static StatusEntry
+    makeBattery(const char* ntsFilePath, adt::f64 updateRateMS, PfnFormatBattery pfnFormatBattery = nullptr)
+    {
+        return {
+            .nts = ntsFilePath,
+            .updateRateMS = updateRateMS,
+            .func {.pfnFormatBattery = pfnFormatBattery},
+            .eType = TYPE::BATTERY
         };
     }
 };
@@ -99,10 +118,22 @@ formatGpuPower(const char* fmt)
     return sfRet;
 }
 
+inline String64
+formatBattery(battery::Report report)
+{
+    String64 sfRet {};
+    adt::print::toSpan({sfRet.data(), String64::CAP},
+        "{} {}%", report.eStatus, report.cap
+    );
+
+    return sfRet;
+}
+
 inline StatusEntry inl_aStatusEntries[] {
     StatusEntry::makeFileWatch("/sys/class/drm/card1/device/hwmon/hwmon3/temp2_input", 3000.0, formatGpuTempC),
     StatusEntry::makeFileWatch("/sys/class/drm/card1/device/hwmon/hwmon3/power1_input", 3000.0, formatGpuPower),
     StatusEntry::makeDateTime("%Y-%m-%d %I:%M%p", 1000.0*30), /* `man strftime` */
+    StatusEntry::makeBattery("/sys/class/power_supply/BATT/", 5000.0, formatBattery),
 #ifdef OPT_IPC_KBLAYOUT
     StatusEntry::makeKeyboardLayout(),
 #endif

@@ -224,6 +224,7 @@ add_executable(
     src/app.cc
     src/frame.cc
     src/Image.cc
+    src/battery.cc
 
     src/ttf/Parser.cc
     src/ttf/Rasterizer.cc
