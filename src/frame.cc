@@ -309,7 +309,6 @@ run()
                                     {
                                         entry.sfHolder = clWrite();
                                         entry.lastUpdateTimeMS = currTime;
-                                        LOG_GOOD("UPDATE BATTERY\n");
                                     }
 
                                     xOffStatus -= entry.sfHolder.size() * xScale;

@@ -9,7 +9,7 @@ namespace config
 
 using String64 = adt::StringFixed<64>;
 using PfnFormatString = String64 (*)(const char* ntsFormat);
-using PfnFormatBattery = String64 (*)(battery::Report report);
+using PfnFormatBattery = String64 (*)(const battery::Report report);
 
 struct StatusEntry
 {
@@ -119,7 +119,7 @@ formatGpuPower(const char* fmt)
 }
 
 inline String64
-formatBattery(battery::Report report)
+formatBattery(const battery::Report report)
 {
     String64 sfRet {};
     adt::print::toSpan({sfRet.data(), String64::CAP},
