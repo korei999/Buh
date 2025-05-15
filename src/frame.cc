@@ -364,8 +364,8 @@ run()
 
                             /* xScale/4 further */
                             if (tag.eState == ZDWL_IPC_OUTPUT_V2_TAG_STATE_ACTIVE)
-                                fillBg(spBuffer, xOff + xScale/4, yOff2, height, height, fgColor);
-                            else fillBgOutline(spBuffer, xOff + xScale/4, yOff2, height, height, 1, fgColor);
+                                fillBg(spBuffer, xOff + xScale/4, yOff2, height*1.3, height*1.3, fgColor);
+                            else fillBgOutline(spBuffer, xOff + xScale/4, yOff2, height*1.3, height*1.3, 1, fgColor);
                         }
 
                         xOff += xScale;
