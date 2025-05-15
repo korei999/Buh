@@ -85,14 +85,14 @@ fillBgOutline(
     /* top */
     for (int yOff = y; yOff < y + thick; ++yOff)
     {
-        for (int xOff = x; xOff < x + width; ++xOff)
+        for (int xOff = x + 1; xOff < x + width - 1; ++xOff)
             sp(xOff, yOff) = color;
     }
 
     /* bop */
     for (int yOff = y + (height - thick); yOff < maxHeight + y; ++yOff)
     {
-        for (int xOff = x; xOff < x + width; ++xOff)
+        for (int xOff = x + 1; xOff < x + width - 1; ++xOff)
             sp(xOff, yOff) = color;
     }
 }
