@@ -86,7 +86,7 @@ main(const int argc, const char* const* argv)
 
     parseArgs(argc, argv);
 
-    new(&app::g_threadPool) ThreadPoolWithMemory<128> {StdAllocator::inst(), SIZE_1K * 16};
+    new(&app::g_threadPool) ThreadPoolWithMemory<128> {StdAllocator::inst(), SIZE_1M};
 
     String sFile {};
     defer( sFile.destroy(StdAllocator::inst()) );
