@@ -98,7 +98,7 @@ formatGpuTempC(const char* fmt)
     String64 sfRet {};
 
     long long num = atoll(fmt);
-    adt::print::toSpan({sfRet.data(), String64::CAP},
+    adt::print::toSpan(sfRet.data(),
         "{}C", num / 1000
     );
 
@@ -111,7 +111,7 @@ formatGpuPower(const char* fmt)
     String64 sfRet {};
 
     long long num = atoll(fmt);
-    adt::print::toSpan({sfRet.data(), String64::CAP},
+    adt::print::toSpan(sfRet.data(),
         "{}W", num / 1000000
     );
 
@@ -122,7 +122,7 @@ inline String64
 formatBattery(const battery::Report report)
 {
     String64 sfRet {};
-    adt::print::toSpan({sfRet.data(), String64::CAP},
+    adt::print::toSpan(sfRet.data(),
         "{} {}%", report.eStatus, report.cap
     );
 
@@ -141,11 +141,11 @@ inline StatusEntry inl_aStatusEntries[] {
 
 constexpr ColorScheme aColorSchemes[] {
     {
-        .tag       {.fg = 0xffbbbbbb, .bg = 0xff222222},
-        .activeTag {.fg = 0xffbbbbbb, .bg = 0xff005577},
+        .tag       {.fg = 0xff777777, .bg = 0xff222222},
+        .activeTag {.fg = 0xffcccccc, .bg = 0xff005577},
         .urgentTag {.fg = 0xff000000, .bg = 0xffff0000},
-        .title     {.fg = 0xffbbbbbb, .bg = 0xff005577},
-        .status    {.fg = 0xffbbbbbb, .bg = 0xff222222},
+        .title     {.fg = 0xffcccccc, .bg = 0xff005577},
+        .status    {.fg = 0xffcccccc, .bg = 0xff222222},
     },
     {
         .tag       {.fg = 0xff555555, .bg = 0xff777777},

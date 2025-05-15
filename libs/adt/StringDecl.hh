@@ -150,8 +150,8 @@ struct StringFixed
     bool operator==(const StringFixed& other) const;
     bool operator==(const adt::StringView sv) const;
 
-    char* data() { return m_aBuff; }
-    const char* data() const { return m_aBuff; }
+    auto& data() { return m_aBuff; }
+    const auto& data() const { return m_aBuff; }
 
     isize size() const;
     void destroy();

@@ -1,7 +1,6 @@
 #include "frame.hh"
 
 #include "app.hh"
-#include "config.hh"
 
 #include "adt/file.hh"
 #include "adt/simd.hh"
@@ -10,6 +9,12 @@
 #include "adt/Arena.hh"
 
 #include <poll.h>
+
+#if __has_include("configUser.hh") && defined OPT_USER_CONFIG
+    #include "configUser.hh"
+#else
+    #include "configDefault.hh"
+#endif /* __has_include("configUser.hh") && defined OPT_USER_CONFIG */
 
 using namespace adt;
 
