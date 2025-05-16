@@ -4,7 +4,7 @@
 #include "logs.hh"
 #include "defer.hh"
 
-#ifdef __linux__
+#if __has_include(<unistd.h>)
 
     #define ADT_USE_LINUX_FILE
 
