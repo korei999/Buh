@@ -114,11 +114,11 @@ run()
             updateRateMS = utils::min(updateRateMS, entry.updateRateMS);
     }
 
-    Arena buffer {SIZE_1K*3};
+    Arena arena {SIZE_1K*3};
 
     while (app::g_bRunning)
     {
-        defer( buffer.reset() );
+        defer( arena.reset() );
 
         wl_display_flush(pDisplay);
 
@@ -154,14 +154,12 @@ run()
                             const int xOffset,
                             const StringView sv,
                             const u32 fgColor,
-                            const u32 bgColor,
                             const int maxAbsX = 9999999
                         ) -> int
                     {
                         int thisXOff = 0;
 
                         auto fg = reinterpret_cast<const ImagePixelARGBle&>(fgColor);
-                        auto bg = reinterpret_cast<const ImagePixelARGBle&>(bgColor);
 
                         for (const wchar_t ch : StringGlyphIt(sv))
                         {
@@ -206,9 +204,9 @@ run()
                                     const f32 t = val / 255.0f;
 
                                     rDest.a = 0xff;
-                                    rDest.r = (u8)(math::lerp(bg.r, fg.r, t));
-                                    rDest.g = (u8)(math::lerp(bg.g, fg.g, t));
-                                    rDest.b = (u8)(math::lerp(bg.b, fg.b, t));
+                                    rDest.r = (u8)(math::lerp(rDest.r, fg.r, t));
+                                    rDest.g = (u8)(math::lerp(rDest.g, fg.g, t));
+                                    rDest.b = (u8)(math::lerp(rDest.b, fg.b, t));
                                 }
                             }
                         }
@@ -221,10 +219,10 @@ run()
                     {
                         auto clDrawEntry = [&](const StringView sv, const int offset)
                         {
-                            clDrawString(offset, sv, config::inl_colorScheme.status.fg, config::inl_colorScheme.status.bg);
+                            clDrawString(offset, sv, config::inl_colorScheme.status.fg);
                         };
 
-                        VecManaged<Pair<StringView, int>> vEntryStrings {&buffer};
+                        VecManaged<Pair<StringView, int>> vEntryStrings {&arena};
 
                         const isize last = utils::size(config::inl_aStatusEntries) - 1;
                         for (isize i = last; i >= 0; --i)
@@ -369,7 +367,7 @@ run()
                         }
 
                         xOff += xScale;
-                        xOff += clDrawString(xOff, StringView {aTagStringBuff, n}, fgColor, bgColor, xOffStatus);
+                        xOff += clDrawString(xOff, StringView {aTagStringBuff, n}, fgColor, xOffStatus);
                         xOff += xScale;
     
                         const int tagXEnd = xOff;
@@ -388,14 +386,14 @@ run()
                     fillBg(spBuffer, xOff, 0, rBar.m_sfLayoutIcon.size()*xScale + xScale*2, yScale, config::inl_colorScheme.tag.bg);
 
                     xOff += xScale;
-                    xOff += clDrawString(xOff, rBar.m_sfLayoutIcon, config::inl_colorScheme.status.fg, config::inl_colorScheme.tag.bg, xOffStatus);
+                    xOff += clDrawString(xOff, rBar.m_sfLayoutIcon, config::inl_colorScheme.status.fg, xOffStatus);
                     xOff += xScale;
 
                     /* title bg */
                     fillBg(spBuffer, xOff, 0, (xOffStatus - xOff) + xScale, yScale, config::inl_colorScheme.title.bg);
 
                     xOff += xScale;
-                    xOff += clDrawString(xOff, rBar.m_sfTitle, config::inl_colorScheme.title.fg, config::inl_colorScheme.title.bg, xOffStatus);
+                    xOff += clDrawString(xOff, rBar.m_sfTitle, config::inl_colorScheme.title.fg, xOffStatus);
                 }
     
                 wl_surface_attach(rBar.m_pSurface, rBar.m_pBuffer, 0, 0);

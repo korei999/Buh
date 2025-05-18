@@ -22,6 +22,7 @@ Report::read(const char* ntsPath, adt::ScratchBuffer* pScratch)
     try
     {
         BufferAllocator buffer {pScratch->nextMem<u8>()};
+        defer( pScratch->reset() );
 
         String sStatus = file::appendDirPath(&buffer, ntsPath, "status");
         String sCapacity = file::appendDirPath(&buffer, ntsPath, "capacity");

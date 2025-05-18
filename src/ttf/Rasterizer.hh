@@ -31,15 +31,14 @@ struct Rasterizer
     /* */
 
     void destroy(adt::IAllocator* pAlloc);
-    void rasterizeAscii(adt::IAllocator* pAlloc, Parser* pFont, adt::IThreadPoolWithMemory* pThreadPool, adt::f32 scale);
-    adt::MapResult<adt::u32, UV> addOrSearchGlyph(adt::ScratchBuffer* pScratch, adt::IAllocator* pAlloc, Parser* pFont, adt::u32 code);
+    void rasterizeAscii(adt::IAllocator* pAllocPersistent, Parser* pFont, adt::IThreadPoolWithMemory* pThreadPool, adt::f32 scale);
+    adt::MapResult<adt::u32, UV> addOrSearchGlyph(adt::ScratchBuffer* pScratch, adt::IAllocator* pAllocPersistent, Parser* pFont, adt::u32 code);
     void rasterizeGlyph(adt::ScratchBuffer* pScratch, const Parser& pFont, const Glyph& pGlyph, int xOff, int yOff);
 
     adt::Span2D<adt::u8> atlasSpan() { return m_atlas.spanMono(); }
     const adt::Span2D<adt::u8> atlasSpan() const { return m_atlas.spanMono(); }
 
     adt::MapResult<adt::u32, UV> searchGlyphAtlasUV(adt::u32 code) const { return m_mapCodeToUV.search(code); }
-
 };
 
 } /* namespace ttf */
