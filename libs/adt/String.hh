@@ -172,7 +172,7 @@ struct StringGraphemeIt
 
         /* */
 
-        It(isize NPOS) : m_i {NPOS} {}
+        It(isize _NPOS) : m_i {_NPOS} {}
         It(const StringView sv) : m_pStr {sv.data()}, m_size {sv.size()} { operator++(); }
 
         /* */
@@ -224,7 +224,7 @@ struct StringGraphemeIt
                     m_i += nBytesDecoded2;
                     mbstate_t mb3 {};
                     wchar_t wc3;
-                    int nBytesDecoded3 = mbrtowc(&wc3, &m_pStr[m_i], m_size - m_i, &mb2);
+                    int nBytesDecoded3 = mbrtowc(&wc3, &m_pStr[m_i], m_size - m_i, &mb3);
                     if (nBytesDecoded3 > 0)
                     {
                         m_i += nBytesDecoded3;
