@@ -32,17 +32,13 @@ Report::read(const char* ntsPath, adt::ScratchBuffer* pScratch)
         StringFixed<64> sfStatus = file::load<64>(sStatus.data());
 
         if (StringView(sfStatus).contains("Charging"))
-        {
             report.eStatus = STATUS::CHARGING;
-        }
         else if (StringView(sfStatus).contains("Discharging"))
-        {
             report.eStatus = STATUS::DISCHARCHING;
-        }
         else if (StringView(sfStatus).contains("Not Charging"))
-        {
             report.eStatus = STATUS::NOT_CHARCHING;
-        }
+        else if (StringView(sfStatus).contains("Full"))
+            report.eStatus = STATUS::FULL;
 
         StringFixed<64> sfCapacity = file::load<64>(sCapacity.data());
         report.cap = atoi(sfCapacity.data());

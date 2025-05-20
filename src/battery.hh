@@ -6,7 +6,7 @@
 namespace battery
 {
 
-enum class STATUS : adt::u8 { ERROR, DISCHARCHING, CHARGING, NOT_CHARCHING, };
+enum class STATUS : adt::u8 { ERROR, DISCHARCHING, CHARGING, NOT_CHARCHING, FULL };
 
 struct Report
 {
@@ -27,7 +27,7 @@ inline isize
 formatToContext(Context ctx, FormatArgs fmtArgs, const battery::STATUS x)
 {
     constexpr StringView map[] {
-        "Error", "Discharching", "Charging", "Not charching"
+        "Error", "Discharching", "Charging", "Not charching", "Full"
     };
     return formatToContext(ctx, fmtArgs, map[int(x)]);
 }
