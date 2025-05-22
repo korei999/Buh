@@ -157,5 +157,6 @@ constexpr ColorScheme aColorSchemes[] {
 };
 
 inline ColorScheme inl_colorScheme = aColorSchemes[0];
+constexpr adt::f32 X_ADVANCE_MUL = 0.99f;
 
 } /* namespace config */

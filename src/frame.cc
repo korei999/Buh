@@ -103,16 +103,19 @@ run()
     wl_display* pDisplay = app::g_wlClient.m_pDisplay;
     pollfd pfd {.fd = wl_display_get_fd(pDisplay), .events = POLLIN, .revents {}};
 
-    ttf::Rasterizer& rast = app::g_rasterizer;
-    const int yScale = static_cast<int>(rast.m_scale);
-    const int xScale = yScale * ttf::Rasterizer::X_STEP;
+    ttf::Rasterizer& rRast = app::g_rasterizer;
+    const int yScale = int(rRast.m_scale); /* y-axis rasterization scale */
+    const int xScale = yScale * ttf::Rasterizer::X_STEP; /* x-axis rasterization scale */
+    const int xMove = int(f32(xScale) * config::X_ADVANCE_MUL); /* distance between characters */
 
-    f64 updateRateMS = 1000.0 * 60.0;
-    for (const auto& entry : config::inl_aStatusEntries)
+    const f64 updateRateMS = [&]
     {
-        if (entry.updateRateMS > 0.0)
-            updateRateMS = utils::min(updateRateMS, entry.updateRateMS);
-    }
+        f64 ret = 1000.0 * 60.0;
+        for (const auto& e : config::inl_aStatusEntries)
+            if (e.updateRateMS > 0.1)
+                ret = utils::min(ret, e.updateRateMS);
+        return ret;
+    }();
 
     Arena arena {SIZE_1K*3};
 
@@ -163,7 +166,7 @@ run()
 
                         for (const wchar_t ch : StringGlyphIt(sv))
                         {
-                            defer( thisXOff += xScale );
+                            defer( thisXOff += xMove );
     
                             if (ch == L' ') continue;
 
@@ -171,7 +174,7 @@ run()
 
                             try
                             {
-                                mFoundUV = rast.addOrSearchGlyph(
+                                mFoundUV = rRast.addOrSearchGlyph(
                                     &app::g_threadPool.scratch(),
                                     StdAllocator::inst(),
                                     &app::g_font, ch
@@ -186,7 +189,7 @@ run()
                             if (!mFoundUV) continue;
                             const auto [u, v] = mFoundUV.value();
     
-                            const Span2D<u8> spAtlas = rast.atlasSpan();
+                            const Span2D<u8> spAtlas = rRast.atlasSpan();
                             const int maxx = utils::min(utils::min(rBar.m_width, maxAbsX), xOffset + thisXOff + xScale);
                             for (int y = 0; y < yScale; ++y)
                             {
@@ -204,14 +207,14 @@ run()
                                     const f32 t = val / 255.0f;
 
                                     rDest.a = 0xff;
-                                    rDest.r = (u8)(math::lerp(rDest.r, fg.r, t));
-                                    rDest.g = (u8)(math::lerp(rDest.g, fg.g, t));
-                                    rDest.b = (u8)(math::lerp(rDest.b, fg.b, t));
+                                    rDest.r = u8(math::lerp(rDest.r, fg.r, t));
+                                    rDest.g = u8(math::lerp(rDest.g, fg.g, t));
+                                    rDest.b = u8(math::lerp(rDest.b, fg.b, t));
                                 }
                             }
                         }
 
-                        return sv.size() * xScale;
+                        return sv.size() * xMove;
                     };
 
                     int xOffStatus = rBar.m_width;
@@ -233,7 +236,7 @@ run()
                             {
                                 case config::StatusEntry::TYPE::TEXT:
                                 {
-                                    xOffStatus -= strlen(entry.nts) * xScale;
+                                    xOffStatus -= strlen(entry.nts) * xMove;
                                     vEntryStrings.emplace(entry.nts, xOffStatus);
                                 }
                                 break;
@@ -259,14 +262,14 @@ run()
                                         entry.lastUpdateTimeMS = currTime;
                                     }
 
-                                    xOffStatus -= entry.sfHolder.size() * xScale;
+                                    xOffStatus -= entry.sfHolder.size() * xMove;
                                     vEntryStrings.emplace(entry.sfHolder, xOffStatus);
                                 }
                                 break;
 
                                 case config::StatusEntry::TYPE::KEYBOARD_LAYOUT:
                                 {
-                                    xOffStatus -= rBar.m_sfKbLayout.size() * xScale;
+                                    xOffStatus -= rBar.m_sfKbLayout.size() * xMove;
                                     vEntryStrings.emplace(rBar.m_sfKbLayout, xOffStatus);
                                 }
                                 break;
@@ -288,7 +291,7 @@ run()
                                         entry.lastUpdateTimeMS = currTime;
                                     }
 
-                                    xOffStatus -= entry.sfHolder.size() * xScale;
+                                    xOffStatus -= entry.sfHolder.size() * xMove;
                                     vEntryStrings.emplace(entry.sfHolder, xOffStatus);
                                 }
                                 break;
@@ -314,13 +317,13 @@ run()
                                         entry.lastUpdateTimeMS = currTime;
                                     }
 
-                                    xOffStatus -= entry.sfHolder.size() * xScale;
+                                    xOffStatus -= entry.sfHolder.size() * xMove;
                                     vEntryStrings.emplace(entry.sfHolder, xOffStatus);
                                 }
                                 break;
                             }
 
-                            xOffStatus -= xScale*2;
+                            xOffStatus -= xMove*2;
                         }
 
                         fillBg(spBuffer, xOffStatus, 0, rBar.m_width - xOffStatus, yScale, config::inl_colorScheme.status.bg);
@@ -352,7 +355,7 @@ run()
                         }
 
                         /* tag bg */
-                        fillBg(spBuffer, tagXBegin, 0, xScale + xScale*n + xScale, yScale, bgColor);
+                        fillBg(spBuffer, tagXBegin, 0, xMove + xMove*n + xMove, yScale, bgColor);
 
                         if (tag.nClients > 0)
                         {
@@ -360,15 +363,15 @@ run()
                             const int height = rBar.m_height / 5;
                             const int yOff2 = height / 1.5;
 
-                            /* xScale/4 further */
+                            /* xMove/4 further */
                             if (tag.eState == ZDWL_IPC_OUTPUT_V2_TAG_STATE_ACTIVE)
-                                fillBg(spBuffer, xOff + xScale/4, yOff2, height*1.3, height*1.3, fgColor);
-                            else fillBgOutline(spBuffer, xOff + xScale/4, yOff2, height*1.3, height*1.3, 1, fgColor);
+                                fillBg(spBuffer, xOff + xMove/4, yOff2, height*1.3, height*1.3, fgColor);
+                            else fillBgOutline(spBuffer, xOff + xMove/4, yOff2, height*1.3, height*1.3, 1, fgColor);
                         }
 
-                        xOff += xScale;
+                        xOff += xMove;
                         xOff += clDrawString(xOff, StringView {aTagStringBuff, n}, fgColor, xOffStatus);
-                        xOff += xScale;
+                        xOff += xMove;
     
                         const int tagXEnd = xOff;
     
@@ -383,16 +386,16 @@ run()
                     }
 
                     /* layout icon bg */
-                    fillBg(spBuffer, xOff, 0, rBar.m_sfLayoutIcon.size()*xScale + xScale*2, yScale, config::inl_colorScheme.tag.bg);
+                    fillBg(spBuffer, xOff, 0, rBar.m_sfLayoutIcon.size()*xMove + xMove*2, yScale, config::inl_colorScheme.tag.bg);
 
-                    xOff += xScale;
+                    xOff += xMove;
                     xOff += clDrawString(xOff, rBar.m_sfLayoutIcon, config::inl_colorScheme.status.fg, xOffStatus);
-                    xOff += xScale;
+                    xOff += xMove;
 
                     /* title bg */
-                    fillBg(spBuffer, xOff, 0, (xOffStatus - xOff) + xScale, yScale, config::inl_colorScheme.title.bg);
+                    fillBg(spBuffer, xOff, 0, (xOffStatus - xOff) + xMove, yScale, config::inl_colorScheme.title.bg);
 
-                    xOff += xScale;
+                    xOff += xMove;
                     xOff += clDrawString(xOff, rBar.m_sfTitle, config::inl_colorScheme.title.fg, xOffStatus);
                 }
     
