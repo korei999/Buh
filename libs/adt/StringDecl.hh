@@ -12,7 +12,7 @@ struct String;
 
 [[nodiscard]] constexpr isize ntsSize(const char* nts);
 
-template <isize SIZE>
+template<isize SIZE>
 [[nodiscard]] constexpr isize charBuffStringSize(const char (&aCharBuff)[SIZE]);
 
 /* Just pointer + size, no allocations, has to be cloned into String to store safely */

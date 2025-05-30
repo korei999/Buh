@@ -350,8 +350,8 @@ Rasterizer::rasterizeAscii(IAllocator* pAlloc, Parser* pFont, IThreadPoolWithMem
 
     const i16 xStep = iScale * X_STEP;
 
-    BufferAllocator buff {pThreadPool->scratch().nextMem<u8>()};
-    defer( pThreadPool->scratch().reset() );
+    BufferAllocator buff {pThreadPool->scratchBuffer().nextMem<u8>()};
+    defer( pThreadPool->scratchBuffer().reset() );
 
     try
     {
@@ -366,7 +366,7 @@ Rasterizer::rasterizeAscii(IAllocator* pAlloc, Parser* pFont, IThreadPoolWithMem
             const i16 yOff = m_yOffAtlas;
             auto clRasterize = [this, pFont, pGlyph, xOff, yOff, pThreadPool]
             {
-                rasterizeGlyph(&pThreadPool->scratch(), *pFont, *pGlyph, xOff, yOff);
+                rasterizeGlyph(&pThreadPool->scratchBuffer(), *pFont, *pGlyph, xOff, yOff);
             };
 
             auto* pCl = buff.alloc<decltype(clRasterize)>(clRasterize);

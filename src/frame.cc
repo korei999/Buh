@@ -175,7 +175,7 @@ run()
                             try
                             {
                                 mFoundUV = rRast.addOrSearchGlyph(
-                                    &app::g_threadPool.scratch(),
+                                    &app::g_threadPool.scratchBuffer(),
                                     StdAllocator::inst(),
                                     &app::g_font, ch
                                 );
@@ -302,7 +302,7 @@ run()
                                     {
                                         config::String64 sf {};
                                         battery::Report report = battery::Report::read(
-                                            entry.nts, &app::g_threadPool.scratch()
+                                            entry.nts, &app::g_threadPool.scratchBuffer()
                                         );
 
                                         if (entry.func.pfnFormatBattery)

@@ -36,7 +36,7 @@ ntsSize(const char* nts)
     return i;
 }
 
-template <isize SIZE>
+template<isize SIZE>
 [[nodiscard]] constexpr isize
 charBuffStringSize(const char (&aCharBuff)[SIZE])
 {
@@ -468,16 +468,25 @@ StringView::removeNLEnd()
 inline bool
 StringView::contains(const StringView r) const
 {
-    if (m_size < r.m_size || m_size == 0 || r.m_size == 0) return false;
+    if (m_size < r.m_size || m_size == 0 || r.m_size == 0)
+        return false;
+
+#if __has_include(<unistd.h>)
+
+    return memmem(data(), size(), r.data(), r.size()) != nullptr;
+
+#else
 
     for (isize i = 0; i < m_size - r.m_size + 1; ++i)
     {
-        const StringView sSub {const_cast<char*>(&(*this)[i]), r.m_size};
-        if (sSub == r)
+        const StringView svSub {const_cast<char*>(&(*this)[i]), r.m_size};
+        if (svSub == r)
             return true;
     }
 
     return false;
+
+#endif
 }
 
 inline char&

@@ -1,6 +1,5 @@
 #include "Client.hh"
 
-#include "adt/Pair.hh"
 #include "adt/logs.hh"
 #include "adt/StdAllocator.hh"
 
@@ -40,7 +39,7 @@ layerSurfaceConfigure(
         bar.m_height = height;
         bar.allocShmBuffer();
     }
-    else if (bar.m_width != static_cast<int>(width) || bar.m_height != static_cast<int>(height))
+    else if (bar.m_width != int(width) || bar.m_height != int(height))
     {
         bar.destroyShmBuffer();
         bar.m_width = width;
@@ -60,22 +59,22 @@ layerSurfaceClosed(
 }
 
 static const wl_registry_listener s_registryListener {
-    .global = decltype(wl_registry_listener::global)(methodPointer(&Client::registryGlobal)),
-    .global_remove = decltype(wl_registry_listener::global_remove)(methodPointer(&Client::registryGlobalRemove)),
+    .global = decltype(wl_registry_listener::global)(methodPointerNonVirtual(&Client::registryGlobal)),
+    .global_remove = decltype(wl_registry_listener::global_remove)(methodPointerNonVirtual(&Client::registryGlobalRemove)),
 };
 
 static const wl_output_listener s_outputListener {
-    .geometry = decltype(wl_output_listener::geometry)(methodPointer(&Client::outputGeometry)),
-    .mode = decltype(wl_output_listener::mode)(methodPointer(&Client::outputMode)),
-    .done = decltype(wl_output_listener::done)(methodPointer(&Client::outputDone)),
-    .scale = decltype(wl_output_listener::scale)(methodPointer(&Client::outputScale)),
-    .name = decltype(wl_output_listener::name)(methodPointer(&Client::outputName)),
-    .description = decltype(wl_output_listener::description)(methodPointer(&Client::outputDescription)),
+    .geometry = decltype(wl_output_listener::geometry)(methodPointerNonVirtual(&Client::outputGeometry)),
+    .mode = decltype(wl_output_listener::mode)(methodPointerNonVirtual(&Client::outputMode)),
+    .done = decltype(wl_output_listener::done)(methodPointerNonVirtual(&Client::outputDone)),
+    .scale = decltype(wl_output_listener::scale)(methodPointerNonVirtual(&Client::outputScale)),
+    .name = decltype(wl_output_listener::name)(methodPointerNonVirtual(&Client::outputName)),
+    .description = decltype(wl_output_listener::description)(methodPointerNonVirtual(&Client::outputDescription)),
 };
 
 static const wl_seat_listener s_seatListener {
-    .capabilities = decltype(wl_seat_listener::capabilities)(methodPointer(&Client::seatCapabilities)),
-    .name = decltype(wl_seat_listener::name)(methodPointer(&Client::seatName)),
+    .capabilities = decltype(wl_seat_listener::capabilities)(methodPointerNonVirtual(&Client::seatCapabilities)),
+    .name = decltype(wl_seat_listener::name)(methodPointerNonVirtual(&Client::seatName)),
 };
 
 static zwlr_layer_surface_v1_listener s_layerSurfaceListener {
@@ -84,33 +83,33 @@ static zwlr_layer_surface_v1_listener s_layerSurfaceListener {
 };
 
 static const wl_pointer_listener s_pointerListener {
-    .enter = decltype(wl_pointer_listener::enter)(methodPointer(&Client::pointerEnter)),
-    .leave = decltype(wl_pointer_listener::leave)(methodPointer(&Client::pointerLeave)),
-    .motion = decltype(wl_pointer_listener::motion)(methodPointer(&Client::pointerMotion)),
-    .button = decltype(wl_pointer_listener::button)(methodPointer(&Client::pointerButton)),
-    .axis = decltype(wl_pointer_listener::axis)(methodPointer(&Client::pointerAxis)),
-    .frame = decltype(wl_pointer_listener::frame)(methodPointer(&Client::pointerFrame)),
+    .enter = decltype(wl_pointer_listener::enter)(methodPointerNonVirtual(&Client::pointerEnter)),
+    .leave = decltype(wl_pointer_listener::leave)(methodPointerNonVirtual(&Client::pointerLeave)),
+    .motion = decltype(wl_pointer_listener::motion)(methodPointerNonVirtual(&Client::pointerMotion)),
+    .button = decltype(wl_pointer_listener::button)(methodPointerNonVirtual(&Client::pointerButton)),
+    .axis = decltype(wl_pointer_listener::axis)(methodPointerNonVirtual(&Client::pointerAxis)),
+    .frame = decltype(wl_pointer_listener::frame)(methodPointerNonVirtual(&Client::pointerFrame)),
 };
 
 static const zdwl_ipc_manager_v2_listener s_dwlListener {
-    .tags = decltype(zdwl_ipc_manager_v2_listener::tags)(methodPointer(&Client::dwlTags)),
-    .layout = decltype(zdwl_ipc_manager_v2_listener::layout)(methodPointer(&Client::dwlLayout)),
+    .tags = decltype(zdwl_ipc_manager_v2_listener::tags)(methodPointerNonVirtual(&Client::dwlTags)),
+    .layout = decltype(zdwl_ipc_manager_v2_listener::layout)(methodPointerNonVirtual(&Client::dwlLayout)),
 };
 
 static const zdwl_ipc_output_v2_listener s_dwlOutputListener {
-    .toggle_visibility = decltype(zdwl_ipc_output_v2_listener::toggle_visibility)(methodPointer(&Client::Bar::toggleVisibility)),
-    .active = decltype(zdwl_ipc_output_v2_listener::active)(methodPointer(&Client::Bar::active)),
-    .tag = decltype(zdwl_ipc_output_v2_listener::tag)(methodPointer(&Client::Bar::tag)),
-    .layout = decltype(zdwl_ipc_output_v2_listener::layout)(methodPointer(&Client::Bar::layout)),
-    .title = decltype(zdwl_ipc_output_v2_listener::title)(methodPointer(&Client::Bar::title)),
-    .appid = decltype(zdwl_ipc_output_v2_listener::appid)(methodPointer(&Client::Bar::appid)),
-    .layout_symbol = decltype(zdwl_ipc_output_v2_listener::layout_symbol)(methodPointer(&Client::Bar::layoutSymbol)),
+    .toggle_visibility = decltype(zdwl_ipc_output_v2_listener::toggle_visibility)(methodPointerNonVirtual(&Client::Bar::toggleVisibility)),
+    .active = decltype(zdwl_ipc_output_v2_listener::active)(methodPointerNonVirtual(&Client::Bar::active)),
+    .tag = decltype(zdwl_ipc_output_v2_listener::tag)(methodPointerNonVirtual(&Client::Bar::tag)),
+    .layout = decltype(zdwl_ipc_output_v2_listener::layout)(methodPointerNonVirtual(&Client::Bar::layout)),
+    .title = decltype(zdwl_ipc_output_v2_listener::title)(methodPointerNonVirtual(&Client::Bar::title)),
+    .appid = decltype(zdwl_ipc_output_v2_listener::appid)(methodPointerNonVirtual(&Client::Bar::appid)),
+    .layout_symbol = decltype(zdwl_ipc_output_v2_listener::layout_symbol)(methodPointerNonVirtual(&Client::Bar::layoutSymbol)),
 #ifdef OPT_IPC_KBLAYOUT
-    .kblayout = decltype(zdwl_ipc_output_v2_listener::kblayout)(methodPointer(&Client::Bar::keyboardLayout)),
+    .kblayout = decltype(zdwl_ipc_output_v2_listener::kblayout)(methodPointerNonVirtual(&Client::Bar::keyboardLayout)),
 #endif
-    .frame = decltype(zdwl_ipc_output_v2_listener::frame)(methodPointer(&Client::Bar::frame)),
-    .fullscreen = decltype(zdwl_ipc_output_v2_listener::fullscreen)(methodPointer(&Client::Bar::fullscreen)),
-    .floating = decltype(zdwl_ipc_output_v2_listener::floating)(methodPointer(&Client::Bar::floating)),
+    .frame = decltype(zdwl_ipc_output_v2_listener::frame)(methodPointerNonVirtual(&Client::Bar::frame)),
+    .fullscreen = decltype(zdwl_ipc_output_v2_listener::fullscreen)(methodPointerNonVirtual(&Client::Bar::fullscreen)),
+    .floating = decltype(zdwl_ipc_output_v2_listener::floating)(methodPointerNonVirtual(&Client::Bar::floating)),
 };
 
 #if defined __clang__

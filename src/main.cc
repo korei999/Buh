@@ -131,9 +131,9 @@ main(const int argc, const char* const* argv)
     app::g_bRunning = true;
 
     /* no need in the pool anymore */
-    app::g_threadPool.destroyKeepScratch(StdAllocator::inst());
+    app::g_threadPool.destroyKeepScratchBuffer(StdAllocator::inst());
 
     frame::run();
 
-    app::g_threadPool.destroyScratchForThisThread();
+    app::g_threadPool.destroyScratchBufferForThisThread();
 }

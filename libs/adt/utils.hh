@@ -273,17 +273,35 @@ binarySearch(const T& array, const B& x)
 }
 
 template<typename T> requires(std::is_integral_v<T>)
-inline T
+[[nodiscard]] inline T
 cycleForward(const T& idx, isize size)
 {
     return (idx + 1) % size;
 }
 
 template<typename T> requires(std::is_integral_v<T>)
-inline T
+[[nodiscard]] inline T
 cycleBackward(const T& idx, isize size)
 {
     return (idx + (size - 1)) % size;
+}
+
+template<typename T> requires(std::is_integral_v<T>)
+[[nodiscard]] inline T
+cycleForwardPowerOf2(const T& i, isize size)
+{
+    ADT_ASSERT(isPowerOf2(size), "size: {}", size);
+
+    return (i + 1) & (size - 1);
+}
+
+template<typename T> requires(std::is_integral_v<T>)
+[[nodiscard]] inline T
+cycleBackwardPowerOf2(const T& i, isize size)
+{
+    ADT_ASSERT(isPowerOf2(size), "size: {}", size);
+
+    return (i - 1) & (size - 1);
 }
 
 } /* namespace adt::utils */
