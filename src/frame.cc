@@ -164,7 +164,7 @@ run()
 
                         auto fg = reinterpret_cast<const ImagePixelARGBle&>(fgColor);
 
-                        for (const wchar_t ch : StringGlyphIt(sv))
+                        for (const wchar_t ch : StringWCharIt(sv))
                         {
                             defer( thisXOff += xMove );
     

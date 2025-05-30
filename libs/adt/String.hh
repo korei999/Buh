@@ -83,13 +83,13 @@ StringView::operator[](isize i) const
 #undef ADT_RANGE_CHECK
 
 /* wchar_t iterator for mutlibyte strings */
-struct StringGlyphIt
+struct StringWCharIt
 {
     const StringView m_s {};
 
     /* */
 
-    StringGlyphIt(const StringView s) : m_s {s} {};
+    StringWCharIt(const StringView s) : m_s {s} {};
 
     /* */
 
