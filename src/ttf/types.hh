@@ -451,3 +451,17 @@ struct Post
 };
 
 } /* namespace ttf */
+
+namespace adt::print
+{
+
+inline isize
+formatToContext(Context ctx, FormatArgs, const ttf::TableRecord& x)
+{
+    ctx.fmt = "{}, {}, {}, {}";
+    ctx.fmtIdx = 0;
+
+    return printArgs(ctx, x.tag, x.checkSum, x.offset, x.length);
+}
+
+} /* namespace adt::print */

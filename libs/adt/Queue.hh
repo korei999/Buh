@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IAllocator.hh"
+#include "StdAllocator.hh"
 #include "utils.hh"
 #include "assert.hh"
 #include "defer.hh"
@@ -38,14 +38,17 @@ struct Queue
     isize pushBack(IAllocator* pAlloc, const T& x);
     isize pushFront(IAllocator* pAlloc, const T& x);
 
-    T* popFront();
-    T* popBack();
+    T& popFront();
+    T& popBack();
 
     template<typename ...ARGS>
     isize emplaceFront(IAllocator* pAlloc, ARGS&&... args) { return pushFront(pAlloc, T(std::forward<ARGS>(args)...)); }
 
     template<typename ...ARGS>
     isize emplaceBack(IAllocator* pAlloc, ARGS&&... args) { return pushBack(pAlloc, T(std::forward<ARGS>(args)...)); }
+
+    void destroy(IAllocator* pAlloc) noexcept;
+    [[nodiscard]] Queue release() noexcept;
 
 protected:
     void grow(IAllocator* pAlloc);
@@ -188,7 +191,7 @@ Queue<T>::pushFront(IAllocator* pAlloc, const T& x)
 }
 
 template<typename T>
-inline T*
+inline T&
 Queue<T>::popFront()
 {
     ADT_ASSERT(!empty(), "empty");
@@ -197,11 +200,11 @@ Queue<T>::popFront()
     m_headI = nextI(m_headI);
 
     --m_size;
-    return &m_pData[tmp];
+    return m_pData[tmp];
 }
 
 template<typename T>
-inline T*
+inline T&
 Queue<T>::popBack()
 {
     ADT_ASSERT(!empty(), "empty");
@@ -209,7 +212,22 @@ Queue<T>::popBack()
     m_tailI = prevI(m_tailI);
     --m_size;
 
-    return &m_pData[m_tailI];
+    return m_pData[m_tailI];
+}
+
+template<typename T>
+inline void
+Queue<T>::destroy(IAllocator* pAlloc) noexcept
+{
+    pAlloc->free(m_pData);
+    *this = {};
+}
+
+template<typename T>
+inline Queue<T>
+Queue<T>::release() noexcept
+{
+    return utils::exchange(this, {});
 }
 
 template<typename T>
@@ -263,27 +281,32 @@ Queue<T>::operator[](isize i) const
     return m_pData[i];
 }
 
-template<typename T>
-struct QueueManaged : public Queue<T>
+template<typename T, typename ALLOC_T = StdAllocatorNV>
+struct QueueManaged : protected ALLOC_T, public Queue<T>
 {
-    IAllocator* m_pAlloc {};
+    using Base = Queue<T>;
 
     /* */
 
-    QueueManaged() : Queue<T>::Queue() {}
-    QueueManaged(IAllocator* pAlloc, isize prealloc = SIZE_MIN)
-        : Queue<T>::Queue(pAlloc, prealloc), m_pAlloc {pAlloc} {}
+    QueueManaged() = default;
+    QueueManaged(isize prealloc) : Base {&allocator(), prealloc} {}
 
     /* */
 
-    isize pushBack(const T& x) { return Queue<T>::pushBack(m_pAlloc, x); }
-    isize pushFront(const T& x) { return Queue<T>::pushFront(m_pAlloc, x); }
+    ALLOC_T& allocator() { return *static_cast<ALLOC_T*>(this); }
+    const ALLOC_T& allocator() const { return *static_cast<ALLOC_T*>(this); }
+
+    isize pushBack(const T& x) { return Base::pushBack(&allocator(), x); }
+    isize pushFront(const T& x) { return Base::pushFront(&allocator(), x); }
 
     template<typename ...ARGS>
-    isize emplaceFront(ARGS&&... args) { return Queue<T>::pushFront(m_pAlloc, T(std::forward<ARGS>(args)...)); }
+    isize emplaceFront(ARGS&&... args) { return Base::pushFront(&allocator(), T(std::forward<ARGS>(args)...)); }
 
     template<typename ...ARGS>
-    isize emplaceBack(ARGS&&... args) { return Queue<T>::pushBack(m_pAlloc, T(std::forward<ARGS>(args)...)); }
+    isize emplaceBack(ARGS&&... args) { return Base::pushBack(&allocator(), T(std::forward<ARGS>(args)...)); }
+
+    void destroy() noexcept { Base::destroy(&allocator()); }
+    [[nodiscard]] QueueManaged release() noexcept { return utils::exchange(this, {}); }
 };
 
 } /* namespace adt */

@@ -79,7 +79,6 @@ parseArgs(const int argc, const char* const* argv)
 int
 main(const int argc, const char* const* argv)
 {
-
     app::g_argc = argc, app::g_argv = argv;
 
     setlocale(LC_ALL, "");

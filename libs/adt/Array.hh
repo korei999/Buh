@@ -10,10 +10,12 @@ namespace adt
 {
 
 /* statically sized array */
-template<typename T, isize CAP> requires(CAP > 0)
+template<typename T, isize CAP>
 struct Array
 {
-    T m_aData[CAP] {};
+    static_assert(CAP > 0);
+
+    T m_aData[CAP];
     isize m_size {};
 
     /* */
@@ -25,11 +27,12 @@ struct Array
     template<typename ...ARGS> requires(std::is_constructible_v<T, ARGS...>)
     constexpr Array(isize size, ARGS&&... args);
 
-    constexpr Array(std::initializer_list<T> list);
+    constexpr Array(const std::initializer_list<T> list);
 
     /* */
 
-    constexpr operator Span<T>() const { return {data(), size()}; }
+    constexpr operator Span<T>() { return {m_aData, m_size}; }
+    constexpr operator const Span<const T>() const { return {m_aData, m_size}; }
 
     /* */
 
@@ -44,57 +47,55 @@ struct Array
 
     constexpr T* data() { return m_aData; }
     constexpr const T* data() const { return m_aData; }
+
     constexpr bool empty() const { return m_size <= 0; }
+
     isize push(const T& x); /* placement new cannot be constexpr something... */
+
     isize pushSorted(sort::ORDER eOrder, const T& x);
-    template<sort::ORDER ORDER> isize pushSorted(const T& x);
-    isize pushAt(isize i, const T& x);
-    template<typename ...ARGS> requires (std::is_constructible_v<T, ARGS...>) constexpr isize emplace(ARGS&&... args);
+
+    template<sort::ORDER ORDER>
+    isize pushSorted(const T& x);
+
+    void pushAt(isize i, const T& x);
+
+    template<typename ...ARGS> requires (std::is_constructible_v<T, ARGS...>)
+    constexpr isize emplace(ARGS&&... args);
+
     constexpr isize fakePush();
-    constexpr T* pop();
-    constexpr void fakePop();
-    constexpr isize cap() const;
-    constexpr isize size() const;
+
+    constexpr T& pop() noexcept;
+
+    constexpr void fakePop() noexcept;
+
+    constexpr isize cap() const noexcept;
+
+    constexpr isize size() const noexcept;
+
     constexpr void setSize(isize newSize);
-    constexpr isize idx(const T* const p) const;
-    constexpr T& first();
-    constexpr const T& first() const;
-    constexpr T& last();
-    constexpr const T& last() const;
+
+    constexpr isize idx(const T* const p) const noexcept;
+
+    constexpr T& first() noexcept;
+    constexpr const T& first() const noexcept;
+
+    constexpr T& last() noexcept;
+    constexpr const T& last() const noexcept;
 
     /* */
 
-    struct It
-    {
-        T* s;
+    constexpr T* begin() noexcept { return {&m_aData[0]}; }
+    constexpr T* end() noexcept { return {&m_aData[m_size]}; }
+    constexpr T* rbegin() noexcept { return {&m_aData[m_size - 1]}; }
+    constexpr T* rend() noexcept { return {m_aData - 1}; }
 
-        constexpr It(const T* pFirst) : s{const_cast<T*>(pFirst)} {}
-
-        constexpr T& operator*() { return *s; }
-        constexpr T* operator->() { return s; }
-
-        constexpr It operator++() { s++; return *this; }
-        constexpr It operator++(int) { T* tmp = s++; return tmp; }
-
-        constexpr It operator--() { s--; return *this; }
-        constexpr It operator--(int) { T* tmp = s--; return tmp; }
-
-        friend constexpr bool operator==(const It& l, const It& r) { return l.s == r.s; }
-        friend constexpr bool operator!=(const It& l, const It& r) { return l.s != r.s; }
-    };
-
-    constexpr It begin() { return {&m_aData[0]}; }
-    constexpr It end() { return {&m_aData[m_size]}; }
-    constexpr It rbegin() { return {&m_aData[m_size - 1]}; }
-    constexpr It rend() { return {m_aData - 1}; }
-
-    constexpr const It begin() const { return {&m_aData[0]}; }
-    constexpr const It end() const { return {&m_aData[m_size]}; }
-    constexpr const It rbegin() const { return {&m_aData[m_size - 1]}; }
-    constexpr const It rend() const { return {m_aData - 1}; }
+    constexpr const T* begin() const noexcept { return {&m_aData[0]}; }
+    constexpr const T* end() const noexcept { return {&m_aData[m_size]}; }
+    constexpr const T* rbegin() const noexcept { return {&m_aData[m_size - 1]}; }
+    constexpr const T* rend() const noexcept { return {m_aData - 1}; }
 };
 
-template<typename T, isize CAP> requires(CAP > 0)
+template<typename T, isize CAP>
 inline isize
 Array<T, CAP>::push(const T& x)
 {
@@ -105,79 +106,47 @@ Array<T, CAP>::push(const T& x)
     return m_size - 1;
 }
 
-template<typename T, isize CAP> requires(CAP > 0)
+template<typename T, isize CAP>
 inline isize
 Array<T, CAP>::pushSorted(const sort::ORDER eOrder, const T& x)
 {
     ADT_ASSERT(size() < CAP, "pushing over capacity");
 
-    if (eOrder == sort::ORDER::INC)
-        return pushSorted<sort::ORDER::INC>(x);
-    else return pushSorted<sort::ORDER::DEC>(x);
+    return sort::push(eOrder, this, x);
 }
 
-template<typename T, isize CAP> requires(CAP > 0)
+template<typename T, isize CAP>
 template<sort::ORDER ORDER>
 inline isize
 Array<T, CAP>::pushSorted(const T& x)
 {
     ADT_ASSERT(size() < CAP, "pushing over capacity");
 
-    isize res = -1;
-
-    if constexpr (ORDER == sort::ORDER::INC)
-    {
-        for (isize i = 0; i < size(); ++i)
-        {
-            if (utils::compare(x, operator[](i)) <= 0)
-            {
-                res = pushAt(i, x);
-                break;
-            }
-        }
-    }
-    else
-    {
-        for (isize i = 0; i < size(); ++i)
-        {
-            if (utils::compare(x, operator[](i)) >= 0)
-            {
-                res = pushAt(i, x);
-                break;
-            }
-        }
-    }
-
-    /* if failed to pushAt */
-    if (res == -1) return push(x);
-
-    return res;
+    return sort::push<Array<T, CAP>, T, ORDER>(this, x);
 }
 
-template<typename T, isize CAP> requires(CAP > 0)
-inline isize
+template<typename T, isize CAP>
+inline void
 Array<T, CAP>::pushAt(const isize i, const T& x)
 {
     fakePush();
     utils::memMove(&operator[](i + 1), &operator[](i), size() - 1 - i);
     new(&operator[](i)) T(x);
-
-    return i;
 }
 
-template<typename T, isize CAP> requires(CAP > 0)
+template<typename T, isize CAP>
 template<typename ...ARGS> requires(std::is_constructible_v<T, ARGS...>)
 inline constexpr isize
 Array<T, CAP>::emplace(ARGS&&... args)
 {
     ADT_ASSERT(size() < CAP, "pushing over capacity");
 
-    new(m_aData + m_size++) T(forward<ARGS>(args)...);
+    new(m_aData + m_size++) T(std::forward<ARGS>(args)...);
 
     return m_size - 1;
 }
 
-template<typename T, isize CAP> requires(CAP > 0)
+template<typename T, isize CAP>
 constexpr isize
 Array<T, CAP>::fakePush()
 {
@@ -186,37 +155,37 @@ Array<T, CAP>::fakePush()
     return m_size - 1;
 }
 
-template<typename T, isize CAP> requires(CAP > 0)
-constexpr T*
-Array<T, CAP>::pop()
+template<typename T, isize CAP>
+constexpr T&
+Array<T, CAP>::pop() noexcept
 {
     ADT_ASSERT(m_size > 0, "empty");
-    return &m_aData[--m_size];
+    return m_aData[--m_size];
 }
 
-template<typename T, isize CAP> requires(CAP > 0)
+template<typename T, isize CAP>
 constexpr void
-Array<T, CAP>::fakePop()
+Array<T, CAP>::fakePop() noexcept
 {
     ADT_ASSERT(m_size > 0, "empty");
     --m_size;
 }
 
-template<typename T, isize CAP> requires(CAP > 0)
+template<typename T, isize CAP>
 constexpr isize
-Array<T, CAP>::cap() const
+Array<T, CAP>::cap() const noexcept
 {
     return CAP;
 }
 
-template<typename T, isize CAP> requires(CAP > 0)
+template<typename T, isize CAP>
 constexpr isize
-Array<T, CAP>::size() const
+Array<T, CAP>::size() const noexcept
 {
     return m_size;
 }
 
-template<typename T, isize CAP> requires(CAP > 0)
+template<typename T, isize CAP>
 constexpr void
 Array<T, CAP>::setSize(isize newSize)
 {
@@ -224,48 +193,48 @@ Array<T, CAP>::setSize(isize newSize)
     m_size = newSize;
 }
 
-template<typename T, isize CAP> requires(CAP > 0)
+template<typename T, isize CAP>
 constexpr isize
-Array<T, CAP>::idx(const T* const p) const
+Array<T, CAP>::idx(const T* const p) const noexcept
 {
     isize r = isize(p - m_aData);
     ADT_ASSERT(r >= 0 && r < size(), "out of range, r: {}, size: {}", r, size());
     return r;
 }
 
-template<typename T, isize CAP> requires(CAP > 0)
+template<typename T, isize CAP>
 constexpr T&
-Array<T, CAP>::first()
+Array<T, CAP>::first() noexcept
 {
     return operator[](0);
 }
 
-template<typename T, isize CAP> requires(CAP > 0)
+template<typename T, isize CAP>
 constexpr const T&
-Array<T, CAP>::first() const
+Array<T, CAP>::first() const noexcept
 {
     return operator[](0);
 }
 
-template<typename T, isize CAP> requires(CAP > 0)
+template<typename T, isize CAP>
 constexpr T&
-Array<T, CAP>::last()
+Array<T, CAP>::last() noexcept
 {
     return operator[](m_size - 1);
 }
 
-template<typename T, isize CAP> requires(CAP > 0)
+template<typename T, isize CAP>
 constexpr const T&
-Array<T, CAP>::last() const
+Array<T, CAP>::last() const noexcept
 {
     return operator[](m_size - 1);
 }
 
-template<typename T, isize CAP> requires(CAP > 0)
+template<typename T, isize CAP>
 inline constexpr
-Array<T, CAP>::Array(isize size) : m_size(size) {}
+Array<T, CAP>::Array(isize size) : m_aData {}, m_size(size) {}
 
-template<typename T, isize CAP> requires(CAP > 0)
+template<typename T, isize CAP>
 template<typename ...ARGS> requires(std::is_constructible_v<T, ARGS...>)
 inline constexpr
 Array<T, CAP>::Array(isize size, ARGS&&... args)
@@ -277,36 +246,13 @@ Array<T, CAP>::Array(isize size, ARGS&&... args)
         new(m_aData + i) T(std::forward<ARGS>(args)...);
 }
 
-template<typename T, isize CAP> requires(CAP > 0)
-constexpr Array<T, CAP>::Array(std::initializer_list<T> list)
+template<typename T, isize CAP>
+constexpr Array<T, CAP>::Array(const std::initializer_list<T> list)
 {
     setSize(list.size());
     for (isize i = 0; i < size(); ++i)
-        m_aData[i] = *(list.begin() + i);
+        m_aData[i] = list.begin()[i];
 }
-
-namespace sort
-{
-
-template<typename T, isize CAP, auto FN_CMP = utils::compare<T>>
-constexpr void
-quick(Array<T, CAP>* pArr)
-{
-    if (pArr->m_size <= 1) return;
-
-    quick<T, FN_CMP>(pArr->m_aData, 0, pArr->m_size - 1);
-}
-
-template<typename T, isize CAP, auto FN_CMP = utils::compare<T>>
-constexpr void
-insertion(Array<T, CAP>* pArr)
-{
-    if (pArr->m_size <= 1) return;
-
-    insertion<T, FN_CMP>(pArr->m_aData, 0, pArr->m_size - 1);
-}
-
-} /* namespace sort */
 
 namespace print
 {

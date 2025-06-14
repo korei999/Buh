@@ -10,6 +10,7 @@ _clean()
     rm -f CMakeCache.txt
     rm -f cmake_install.cmake
     rm -f compile_commands.json
+    rm -rf src/wayland/WaylandGlueGenerated
 }
 
 releaseCLANG()

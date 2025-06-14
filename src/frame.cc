@@ -225,7 +225,7 @@ run()
                             clDrawString(offset, sv, config::inl_colorScheme.status.fg);
                         };
 
-                        VecManaged<Pair<StringView, int>> vEntryStrings {&arena};
+                        Vec<Pair<StringView, int>> vEntryStrings {&arena};
 
                         const isize last = utils::size(config::inl_aStatusEntries) - 1;
                         for (isize i = last; i >= 0; --i)
@@ -237,7 +237,7 @@ run()
                                 case config::StatusEntry::TYPE::TEXT:
                                 {
                                     xOffStatus -= strlen(entry.nts) * xMove;
-                                    vEntryStrings.emplace(entry.nts, xOffStatus);
+                                    vEntryStrings.emplace(&arena, entry.nts, xOffStatus);
                                 }
                                 break;
 
@@ -263,14 +263,14 @@ run()
                                     }
 
                                     xOffStatus -= entry.sfHolder.size() * xMove;
-                                    vEntryStrings.emplace(entry.sfHolder, xOffStatus);
+                                    vEntryStrings.emplace(&arena, entry.sfHolder, xOffStatus);
                                 }
                                 break;
 
                                 case config::StatusEntry::TYPE::KEYBOARD_LAYOUT:
                                 {
                                     xOffStatus -= rBar.m_sfKbLayout.size() * xMove;
-                                    vEntryStrings.emplace(rBar.m_sfKbLayout, xOffStatus);
+                                    vEntryStrings.emplace(&arena, rBar.m_sfKbLayout, xOffStatus);
                                 }
                                 break;
 
@@ -292,7 +292,7 @@ run()
                                     }
 
                                     xOffStatus -= entry.sfHolder.size() * xMove;
-                                    vEntryStrings.emplace(entry.sfHolder, xOffStatus);
+                                    vEntryStrings.emplace(&arena, entry.sfHolder, xOffStatus);
                                 }
                                 break;
 
@@ -318,7 +318,7 @@ run()
                                     }
 
                                     xOffStatus -= entry.sfHolder.size() * xMove;
-                                    vEntryStrings.emplace(entry.sfHolder, xOffStatus);
+                                    vEntryStrings.emplace(&arena, entry.sfHolder, xOffStatus);
                                 }
                                 break;
                             }
