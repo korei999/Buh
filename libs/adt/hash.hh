@@ -9,7 +9,7 @@ namespace adt::hash
 {
 
 inline usize
-crc32(const u8* p, isize byteSize, usize seed = 0xffffffff)
+crc32(const u8* p, isize byteSize, usize seed = 0)
 {
     usize crc = seed;
 
