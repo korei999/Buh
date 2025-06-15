@@ -28,7 +28,7 @@ layerSurfaceConfigure(
 )
 {
     ADT_ASSERT(p != nullptr, "p: {}\n", p);
-    LOG_WARN("width/height: [{}], surface: {}\n", Pair {width, height}, zwlr_layer_surface_v1);
+    LOG_WARN("width/height: {}, surface: {}\n", Pair {width, height}, zwlr_layer_surface_v1);
 
     Client::Bar& bar = *static_cast<Client::Bar*>(p);
     ADT_ASSERT(bar.m_pLayerSurface == zwlr_layer_surface_v1, "");

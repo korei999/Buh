@@ -128,7 +128,6 @@ include_directories(BEFORE "assets")
 
 add_definitions("-DADT_LOGS_LESS_TYPING")
 add_definitions("-DADT_DEFER_LESS_TYPING")
-add_definitions("-DADT_JSON_USE_PRINTF")
 
 if (CMAKE_BUILD_TYPE MATCHES "DebugO1")
     if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
