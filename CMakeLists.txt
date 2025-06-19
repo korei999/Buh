@@ -122,7 +122,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Windows")
     add_definitions("-DADT_STD_TYPES")
 endif()
 
-include_directories(BEFORE "libs")
+include_directories(BEFORE "include")
 include_directories(BEFORE "src")
 include_directories(BEFORE "assets")
 

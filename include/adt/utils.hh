@@ -26,9 +26,21 @@
 
 #include <ctime>
 #include <cstring>
+#include <utility>
 
 namespace adt::utils
 {
+
+template<typename T, typename ...ARGS>
+inline void
+moveDestruct(T* pVal, ARGS&&... args)
+{
+    T tmp = T (std::forward<ARGS>(args)...);
+    new(pVal) T (std::move(tmp));
+
+    if constexpr (!std::is_trivially_destructible_v<T>)
+        tmp.~T();
+}
 
 /* bit number starts from 0 */
 inline constexpr isize
@@ -238,14 +250,6 @@ memSet(T* pDest, int byte, isize size)
 {
     ADT_ASSERT(pDest != nullptr, " ");
     memset(pDest, byte, size * sizeof(T));
-}
-
-template<typename T>
-inline constexpr void
-fill(T* pData, T x, isize size)
-{
-    for (isize i = 0; i < size; ++i)
-        pData[i] = x;
 }
 
 template<typename T>
