@@ -1,6 +1,7 @@
 #include "frame.hh"
 
 #include "app.hh"
+#include "exec.hh"
 
 #include "adt/file.hh"
 #include "adt/simd.hh"
@@ -8,7 +9,9 @@
 #include "adt/math.hh"
 #include "adt/Arena.hh"
 
+#include <signal.h>
 #include <poll.h>
+#include <sys/signalfd.h>
 
 #if __has_include("configUser.hh") && defined OPT_USER_CONFIG
     #include "configUser.hh"
@@ -97,11 +100,28 @@ fillBgOutline(
     }
 }
 
+constexpr isize MAX_SIGNAL = 20;
+
 void
 run()
 {
+    sigset_t sigMask {};
+    sigemptyset(&sigMask);
+    sigaddset(&sigMask, SIGUSR1);
+    sigaddset(&sigMask, SIGUSR2);
+    for (int i = SIGRTMIN; i <= SIGRTMIN + MAX_SIGNAL; ++i)
+        sigaddset(&sigMask, i);
+
+    sigprocmask(SIG_BLOCK, &sigMask, nullptr);
+
+    int fdSignals = signalfd(-1, &sigMask, SFD_NONBLOCK | SFD_CLOEXEC);
+    pollfd sigPollFd = {.fd = fdSignals, .events = POLLIN, .revents {}};
+    defer( close(fdSignals) );
+
     wl_display* pDisplay = app::g_wlClient.m_pDisplay;
-    pollfd pfd {.fd = wl_display_get_fd(pDisplay), .events = POLLIN, .revents {}};
+    pollfd wlFd {.fd = wl_display_get_fd(pDisplay), .events = POLLIN, .revents {}};
+
+    pollfd aFds[2] {wlFd, sigPollFd};
 
     ttf::Rasterizer& rRast = app::g_rasterizer;
     const int yScale = int(rRast.m_scale); /* y-axis rasterization scale */
@@ -111,7 +131,7 @@ run()
     const f64 updateRateMS = [&]
     {
         f64 ret = 1000.0 * 60.0;
-        for (const auto& e : config::inl_aStatusEntries)
+        for (const auto& e : config::g_aStatusEntries)
             if (e.updateRateMS > 0.1)
                 ret = utils::min(ret, e.updateRateMS);
         return ret;
@@ -125,11 +145,27 @@ run()
 
         wl_display_flush(pDisplay);
 
-        const int pollStatus = poll(&pfd, 1, updateRateMS);
+        const int pollStatus = poll(aFds, utils::size(aFds), updateRateMS);
 
-        if (pfd.revents & POLLIN)
+        if (aFds[0].revents & POLLIN)
             if (wl_display_dispatch(pDisplay) == -1)
                 return;
+
+        constexpr int NO_SIGNAL = -2;
+        int currSignalId = NO_SIGNAL;
+
+        if (aFds[1].revents & POLLIN)
+        {
+            signalfd_siginfo fdsi;
+            ssize_t n = read(fdSignals, &fdsi, sizeof(fdsi));
+
+            if (n == sizeof(fdsi))
+            {
+                currSignalId = fdsi.ssi_signo - SIGRTMIN;
+                LOG_GOOD("currSignalId: {}\n", currSignalId);
+                g_bRedraw = true;
+            }
+        }
 
         if (pollStatus == 0) g_bRedraw = true;
 
@@ -169,6 +205,7 @@ run()
                             defer( thisXOff += xMove );
     
                             if (ch == L' ') continue;
+                            if (ch == L'\n') break;
 
                             MapResult<u32, ttf::Rasterizer::UV> mFoundUV {};
 
@@ -227,17 +264,41 @@ run()
 
                         Vec<Pair<StringView, int>> vEntryStrings {&arena};
 
-                        const isize last = utils::size(config::inl_aStatusEntries) - 1;
+                        auto clProcEntry = [&](config::StatusEntry* p, auto clWrite)
+                        {
+                            bool bTimedOut = p->updateRateMS > 0 && p->lastUpdateTimeMS + p->updateRateMS <= currTime;
+                            bool bSignaled = p->signalId == currSignalId;
+
+                            if (bTimedOut || bSignaled)
+                            {
+                                p->sfHolder = clWrite();
+                                p->lastUpdateTimeMS = currTime;
+                            }
+
+                            xOffStatus -= p->sfHolder.size()*xMove;
+                            vEntryStrings.emplace(&arena, p->sfHolder, xOffStatus);
+                        };
+
+                        const isize last = utils::size(config::g_aStatusEntries) - 1;
                         for (isize i = last; i >= 0; --i)
                         {
-                            config::StatusEntry& entry = config::inl_aStatusEntries[i];
+                            config::StatusEntry& entry = config::g_aStatusEntries[i];
 
                             switch (entry.eType)
                             {
+                                case config::StatusEntry::TYPE::EXEC:
+                                {
+                                    clProcEntry(&entry, [&] { return exec::runReadOutput(entry); });
+                                }
+                                break;
+
                                 case config::StatusEntry::TYPE::TEXT:
                                 {
-                                    xOffStatus -= strlen(entry.nts) * xMove;
-                                    vEntryStrings.emplace(&arena, entry.nts, xOffStatus);
+                                    if (entry.nts != nullptr)
+                                    {
+                                        xOffStatus -= strlen(entry.nts) * xMove;
+                                        vEntryStrings.emplace(&arena, entry.nts, xOffStatus);
+                                    }
                                 }
                                 break;
 
@@ -256,14 +317,7 @@ run()
                                         return sf;
                                     };
 
-                                    if (entry.lastUpdateTimeMS + entry.updateRateMS <= currTime)
-                                    {
-                                        entry.sfHolder = clWrite();
-                                        entry.lastUpdateTimeMS = currTime;
-                                    }
-
-                                    xOffStatus -= entry.sfHolder.size() * xMove;
-                                    vEntryStrings.emplace(&arena, entry.sfHolder, xOffStatus);
+                                    clProcEntry(&entry, clWrite);
                                 }
                                 break;
 
@@ -285,14 +339,7 @@ run()
                                         return sf;
                                     };
 
-                                    if (entry.lastUpdateTimeMS + entry.updateRateMS <= currTime)
-                                    {
-                                        entry.sfHolder = clWrite();
-                                        entry.lastUpdateTimeMS = currTime;
-                                    }
-
-                                    xOffStatus -= entry.sfHolder.size() * xMove;
-                                    vEntryStrings.emplace(&arena, entry.sfHolder, xOffStatus);
+                                    clProcEntry(&entry, clWrite);
                                 }
                                 break;
 
@@ -311,14 +358,7 @@ run()
                                         return sf;
                                     };
 
-                                    if (entry.lastUpdateTimeMS + entry.updateRateMS <= currTime)
-                                    {
-                                        entry.sfHolder = clWrite();
-                                        entry.lastUpdateTimeMS = currTime;
-                                    }
-
-                                    xOffStatus -= entry.sfHolder.size() * xMove;
-                                    vEntryStrings.emplace(&arena, entry.sfHolder, xOffStatus);
+                                    clProcEntry(&entry, clWrite);
                                 }
                                 break;
                             }

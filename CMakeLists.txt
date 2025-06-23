@@ -224,6 +224,7 @@ add_executable(
     src/frame.cc
     src/Image.cc
     src/battery.cc
+    src/exec.cc
 
     src/ttf/Parser.cc
     src/ttf/Rasterizer.cc
@@ -250,60 +251,58 @@ if (OPT_MIMALLOC)
     target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE mimalloc-static)
 endif()
 
-if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client)
 
-    include_directories(BEFORE ${WAYLAND_CLIENT_INCLUDE_DIRS})
-    target_link_libraries(
-        ${CMAKE_PROJECT_NAME} PRIVATE
-        ${WAYLAND_CLIENT_LIBRARIES} 
-    )
+include_directories(BEFORE ${WAYLAND_CLIENT_INCLUDE_DIRS})
+target_link_libraries(
+    ${CMAKE_PROJECT_NAME} PRIVATE
+    ${WAYLAND_CLIENT_LIBRARIES}
+)
 
-    set(WLP "./src/wayland")
-    set(WLPD "${WLP}/WaylandGlueGenerated")
-    execute_process(
-        COMMAND pkg-config wayland-protocols --variable=pkgdatadir
-        OUTPUT_VARIABLE WAYLAND_PROTOCOLS_DIR
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    execute_process(
-        COMMAND pkg-config --variable=wayland_scanner wayland-scanner
-        OUTPUT_VARIABLE WAYLAND_SCANNER
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+set(WLP "./src/wayland")
+set(WLPD "${WLP}/WaylandGlueGenerated")
+execute_process(
+    COMMAND pkg-config wayland-protocols --variable=pkgdatadir
+    OUTPUT_VARIABLE WAYLAND_PROTOCOLS_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+execute_process(
+    COMMAND pkg-config --variable=wayland_scanner wayland-scanner
+    OUTPUT_VARIABLE WAYLAND_SCANNER
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
 
-    set(XDG_SHELL "${WAYLAND_PROTOCOLS_DIR}/stable/xdg-shell/xdg-shell.xml")
-    set(WLR_LAYER_SHELL "protocols/wlr-layer-shell-unstable-v1.xml")
+set(XDG_SHELL "${WAYLAND_PROTOCOLS_DIR}/stable/xdg-shell/xdg-shell.xml")
+set(WLR_LAYER_SHELL "protocols/wlr-layer-shell-unstable-v1.xml")
 
-    if (OPT_IPC_KBLAYOUT)
-        set(DWL_IPC "protocols/dwl-ipc-unstable-kblayout-v2.xml")
-    else()
-        set(DWL_IPC "protocols/dwl-ipc-unstable-v2.xml")
-    endif()
-
-    message(STATUS "WLP: '${WLP}'")
-    message(STATUS "WLPD: '${WLPD}'")
-    message(STATUS "WAYLAND_PROTOCOLS_DIR: '${WAYLAND_PROTOCOLS_DIR}'")
-    message(STATUS "WAYLAND_SCANNER: '${WAYLAND_SCANNER}'")
-    message(STATUS "XDG_SHELL: '${XDG_SHELL}'")
-    message(STATUS "WLR_LAYER_SHELL: '${WLR_LAYER_SHELL}'")
-    message(STATUS "DWL_IPC: '${DWL_IPC}'")
-
-    execute_process(COMMAND mkdir -p ${CMAKE_SOURCE_DIR}/${WLPD})
-    execute_process(COMMAND ${WAYLAND_SCANNER} client-header ${XDG_SHELL} ${CMAKE_SOURCE_DIR}/${WLPD}/xdg-shell.h)
-    execute_process(COMMAND ${WAYLAND_SCANNER} private-code  ${XDG_SHELL} ${CMAKE_SOURCE_DIR}/${WLPD}/xdg-shell.c)
-    execute_process(COMMAND ${WAYLAND_SCANNER} client-header ${WLR_LAYER_SHELL} ${CMAKE_SOURCE_DIR}/${WLPD}/wlr-layer-shell.h)
-    execute_process(COMMAND ${WAYLAND_SCANNER} private-code  ${WLR_LAYER_SHELL} ${CMAKE_SOURCE_DIR}/${WLPD}/wlr-layer-shell.c)
-    execute_process(COMMAND ${WAYLAND_SCANNER} client-header ${DWL_IPC} ${CMAKE_SOURCE_DIR}/${WLPD}/dwl-ipc.h)
-    execute_process(COMMAND ${WAYLAND_SCANNER} private-code  ${DWL_IPC} ${CMAKE_SOURCE_DIR}/${WLPD}/dwl-ipc.c)
-
-    target_sources(
-        ${CMAKE_PROJECT_NAME} PRIVATE
-        ${WLPD}/wlr-layer-shell.c
-        ${WLPD}/dwl-ipc.c
-        ${WLPD}/xdg-shell.c
-    )
+if (OPT_IPC_KBLAYOUT)
+    set(DWL_IPC "protocols/dwl-ipc-unstable-kblayout-v2.xml")
+else()
+    set(DWL_IPC "protocols/dwl-ipc-unstable-v2.xml")
 endif()
 
-# install(TARGETS ${CMAKE_PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+message(STATUS "WLP: '${WLP}'")
+message(STATUS "WLPD: '${WLPD}'")
+message(STATUS "WAYLAND_PROTOCOLS_DIR: '${WAYLAND_PROTOCOLS_DIR}'")
+message(STATUS "WAYLAND_SCANNER: '${WAYLAND_SCANNER}'")
+message(STATUS "XDG_SHELL: '${XDG_SHELL}'")
+message(STATUS "WLR_LAYER_SHELL: '${WLR_LAYER_SHELL}'")
+message(STATUS "DWL_IPC: '${DWL_IPC}'")
+
+execute_process(COMMAND mkdir -p ${CMAKE_SOURCE_DIR}/${WLPD})
+execute_process(COMMAND ${WAYLAND_SCANNER} client-header ${XDG_SHELL} ${CMAKE_SOURCE_DIR}/${WLPD}/xdg-shell.h)
+execute_process(COMMAND ${WAYLAND_SCANNER} private-code  ${XDG_SHELL} ${CMAKE_SOURCE_DIR}/${WLPD}/xdg-shell.c)
+execute_process(COMMAND ${WAYLAND_SCANNER} client-header ${WLR_LAYER_SHELL} ${CMAKE_SOURCE_DIR}/${WLPD}/wlr-layer-shell.h)
+execute_process(COMMAND ${WAYLAND_SCANNER} private-code  ${WLR_LAYER_SHELL} ${CMAKE_SOURCE_DIR}/${WLPD}/wlr-layer-shell.c)
+execute_process(COMMAND ${WAYLAND_SCANNER} client-header ${DWL_IPC} ${CMAKE_SOURCE_DIR}/${WLPD}/dwl-ipc.h)
+execute_process(COMMAND ${WAYLAND_SCANNER} private-code  ${DWL_IPC} ${CMAKE_SOURCE_DIR}/${WLPD}/dwl-ipc.c)
+
+target_sources(
+    ${CMAKE_PROJECT_NAME} PRIVATE
+    ${WLPD}/wlr-layer-shell.c
+    ${WLPD}/dwl-ipc.c
+    ${WLPD}/xdg-shell.c
+)
+
+install(TARGETS ${CMAKE_PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

@@ -38,20 +38,22 @@ Client::Bar::allocShmBuffer()
 void
 Client::Bar::destroyShmBuffer()
 {
-    wl_shm_pool_destroy(m_pShmPool);
-    munmap(m_pPoolData, m_poolSize);
-    m_height = 0, m_width = 0, m_stride = 0;
+    if (m_pShmPool) wl_shm_pool_destroy(m_pShmPool);
+    if (m_pPoolData) munmap(m_pPoolData, m_poolSize);
+
+    m_pShmPool = nullptr, m_pPoolData = nullptr;
+    m_height = m_width = m_stride = 0;
 }
 
 void
 Client::Bar::destroy()
 {
     destroyShmBuffer();
-    wl_output_destroy(m_pOutput);
-    zwlr_layer_surface_v1_destroy(m_pLayerSurface);
-    wl_surface_destroy(m_pSurface);
-    zdwl_ipc_output_v2_destroy(m_pDwlOutput);
-    wl_buffer_destroy(m_pBuffer);
+    if (m_pOutput) wl_output_destroy(m_pOutput);
+    if (m_pLayerSurface) zwlr_layer_surface_v1_destroy(m_pLayerSurface);
+    if (m_pSurface) wl_surface_destroy(m_pSurface);
+    if (m_pDwlOutput) zdwl_ipc_output_v2_destroy(m_pDwlOutput);
+    if (m_pBuffer) wl_buffer_destroy(m_pBuffer);
 
     m_vTags.destroy(StdAllocator::inst());
 }

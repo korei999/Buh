@@ -1,6 +1,7 @@
 #pragma once
 
-#include "adt/String.hh"
+#include "adt/Vec.hh"
+
 #include "ColorScheme.hh"
 #include "battery.hh"
 
@@ -19,6 +20,7 @@ struct StatusEntry
         DATE_TIME,
         KEYBOARD_LAYOUT,
         FILE_WATCH,
+        EXEC,
         BATTERY,
     };
 
@@ -27,6 +29,8 @@ struct StatusEntry
     const char* nts {};
     adt::f64 updateRateMS {};
     const char* ntsFormat {};
+    adt::VecM<char*> vArgs {};
+    int signalId = -1;
 
     union
     {
@@ -90,6 +94,24 @@ struct StatusEntry
             .eType = TYPE::BATTERY
         };
     }
+
+    template<typename ...ARGS>
+    static StatusEntry
+    makeExec(PfnFormatString pfnFormat, adt::f64 updateRateMS, int sigrtminX, ARGS&&... args)
+    {
+        StatusEntry n {
+            .updateRateMS = updateRateMS,
+            .signalId = sigrtminX,
+            .func {.pfnFormatString = pfnFormat},
+            .eType = TYPE::EXEC,
+        };
+
+        n.vArgs.setCap(sizeof...(ARGS) + 1);
+        (n.vArgs.emplace(strdup(args)), ...);
+        n.vArgs.emplace(nullptr);
+
+        return n;
+    }
 };
 
 inline String64
@@ -129,7 +151,14 @@ formatBattery(const battery::Report report)
     return sfRet;
 }
 
-inline StatusEntry inl_aStatusEntries[] {
+inline String64
+formatVolume(const char* ntsOutput)
+{
+    return adt::StringView(ntsOutput).trimEnd();
+}
+
+inline StatusEntry g_aStatusEntries[] {
+    StatusEntry::makeExec(formatVolume, 5000.0, 9, "wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"),
     StatusEntry::makeFileWatch("/sys/class/drm/card1/device/hwmon/hwmon3/temp2_input", 3000.0, formatGpuTempC),
     StatusEntry::makeFileWatch("/sys/class/drm/card1/device/hwmon/hwmon3/power1_input", 3000.0, formatGpuPower),
     StatusEntry::makeDateTime("%Y-%m-%d %I:%M%p", 1000.0*30), /* `man strftime` */

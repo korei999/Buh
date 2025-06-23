@@ -76,14 +76,10 @@ parseArgs(const int argc, const char* const* argv)
     }
 }
 
-int
-main(const int argc, const char* const* argv)
+static int
+startup()
 {
-    app::g_argc = argc, app::g_argv = argv;
-
-    setlocale(LC_ALL, "");
-
-    parseArgs(argc, argv);
+    parseArgs(app::g_argc, app::g_argv);
 
     new(&app::g_threadPool) ThreadPoolWithMemory<128> {StdAllocator::inst(), SIZE_1M};
 
@@ -127,6 +123,9 @@ main(const int argc, const char* const* argv)
     new(&app::g_wlClient) wayland::Client {"Buh", s_barHeight};
     defer( app::g_wlClient.destroy() );
 
+    // new(&app::g_wirePlumber) WirePlumber {INIT};
+    // defer( app::g_wirePlumber.destroy() );
+
     app::g_bRunning = true;
 
     /* no need in the pool anymore */
@@ -135,4 +134,23 @@ main(const int argc, const char* const* argv)
     frame::run();
 
     app::g_threadPool.destroyScratchBufferForThisThread();
+
+    return 0;
+}
+
+int
+main(const int argc, const char* const* argv)
+{
+    app::g_argc = argc, app::g_argv = argv;
+
+    setlocale(LC_ALL, "");
+
+    try
+    {
+        startup();
+    }
+    catch (const IException& ex)
+    {
+        ex.printErrorMsg(stderr);
+    }
 }

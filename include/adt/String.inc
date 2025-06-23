@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Span.inc"
-#include "hash.hh"
+
+#include <concepts>
 
 namespace adt
 {
@@ -11,9 +12,22 @@ struct IAllocator;
 struct String;
 struct StringView;
 
+namespace hash
+{
+template<typename T> inline usize func(const T& x);
+}
+
 template<typename T>
-concept ConvertsToStringView = requires(const T& c)
-{ StringView(c); };
+concept ConvertsToStringView =
+(requires(const T& t)
+{
+    { t.data() } -> std::same_as<const char*>;
+    { t.size() } -> std::convertible_to<isize>;
+}) ||
+(requires(const T& t)
+{
+    { StringView(t) } -> std::same_as<StringView>;
+});
 
 [[nodiscard]] constexpr isize ntsSize(const char* nts);
 
@@ -59,8 +73,8 @@ struct StringView
     [[nodiscard]] bool endsWith(const StringView r) const;
     constexpr isize lastOf(char c) const;
     constexpr isize firstOf(char c) const;
-    void trimEnd();
-    void removeNLEnd(); /* remove \r\n */
+    StringView& trimEnd();
+    StringView& removeNLEnd(); /* remove \r\n */
     [[nodiscard]] bool contains(const StringView r) const;
     [[nodiscard]] isize subStringAt(const StringView r) const noexcept;
     [[nodiscard]] char& first();
