@@ -38,6 +38,9 @@ runReadOutput(const config::StatusEntry& entry)
 
         if (!entry.vArgs.empty())
             execvp(entry.vArgs[0], entry.vArgs.data());
+
+        /* Just quit if execvp() somehow failed. */
+        exit(1);
     }
     else /* parent branch */
     {
