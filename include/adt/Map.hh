@@ -21,9 +21,8 @@ enum class MAP_BUCKET_FLAGS : u8
 {
     NONE = 0,
     OCCUPIED = 1,
-    DELETED = 1 << 1,
+    DELETED = 2,
 };
-ADT_ENUM_BITWISE_OPERATORS(MAP_BUCKET_FLAGS);
 
 template<typename K, typename V>
 struct KeyVal
@@ -217,7 +216,7 @@ inline isize
 Map<K, V, FN_HASH>::firstI() const
 {
     isize i = 0;
-    while (i < m_vBuckets.cap() && !(m_vBuckets[i].eFlags & MAP_BUCKET_FLAGS::OCCUPIED))
+    while (i < m_vBuckets.cap() && m_vBuckets[i].eFlags != MAP_BUCKET_FLAGS::OCCUPIED)
         ++i;
 
     if (i >= m_vBuckets.cap()) i = NPOS;
@@ -230,7 +229,7 @@ inline isize
 Map<K, V, FN_HASH>::nextI(isize i) const
 {
     do ++i;
-    while (i < m_vBuckets.cap() && !(m_vBuckets[i].eFlags & MAP_BUCKET_FLAGS::OCCUPIED));
+    while (i < m_vBuckets.cap() && m_vBuckets[i].eFlags != MAP_BUCKET_FLAGS::OCCUPIED);
 
     if (i >= m_vBuckets.cap()) i = NPOS;
 
@@ -449,12 +448,13 @@ Map<K, V, FN_HASH>::searchHashed(const K& key, usize keyHash) const
         return res;
     }
 
-    isize idx = isize(keyHash % usize(m_vBuckets.cap()));
+    // isize idx = isize(keyHash % usize(m_vBuckets.cap()));
+    isize idx = isize(keyHash & usize(m_vBuckets.cap() - 1));
     res.hash = keyHash;
 
-    while (int(m_vBuckets[idx].eFlags) > 0) /* deleted or occupied */
+    while (m_vBuckets[idx].eFlags != MAP_BUCKET_FLAGS::NONE) /* deleted or occupied */
     {
-        if (!(m_vBuckets[idx].eFlags & MAP_BUCKET_FLAGS::DELETED) &&
+        if (m_vBuckets[idx].eFlags != MAP_BUCKET_FLAGS::DELETED &&
             m_vBuckets[idx].key == key
         )
         {
@@ -481,9 +481,9 @@ template<typename K, typename V, usize (*FN_HASH)(const K&)>
 inline isize
 Map<K, V, FN_HASH>::insertionIdx(usize hash, const K& key) const
 {
-    isize idx = isize(hash % m_vBuckets.cap());
+    isize idx = isize(hash & usize(m_vBuckets.cap() - 1));
 
-    while (bool(m_vBuckets[idx].eFlags & MAP_BUCKET_FLAGS::OCCUPIED))
+    while (m_vBuckets[idx].eFlags == MAP_BUCKET_FLAGS::OCCUPIED)
     {
         if (m_vBuckets[idx].key == key) break;
 
