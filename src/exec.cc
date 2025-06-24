@@ -1,7 +1,5 @@
 #include "exec.hh"
 
-#include "adt/logs.hh"
-
 #include "sys/wait.h"
 
 using namespace adt;
@@ -33,6 +31,7 @@ runReadOutput(const config::StatusEntry& entry)
     if (pid == 0) /* child branch */
     {
         close(aPipeFds[0]);
+        /* Connect child's stdout with our pipe write fd. */
         dup2(aPipeFds[1], STDOUT_FILENO);
         close(aPipeFds[1]);
 
@@ -50,9 +49,6 @@ runReadOutput(const config::StatusEntry& entry)
         close(aPipeFds[0]);
         int waitStatus = 0;
         waitpid(pid, &waitStatus, 0);
-
-        if (!WIFEXITED(waitStatus) || WEXITSTATUS(waitStatus) != 0)
-            LOG("child exited with status: {}\n", WEXITSTATUS(waitStatus));
 
         return entry.func.pfnFormatString(aBuff);
     }
