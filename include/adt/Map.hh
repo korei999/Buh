@@ -131,6 +131,9 @@ struct Map
     template<typename ...ARGS> requires(std::is_constructible_v<V, ARGS...>)
     MapResult<K, V> emplace(IAllocator* p, const K& key, ARGS&&... args);
 
+    template<typename ...ARGS> requires(std::is_constructible_v<V, ARGS...>)
+    MapResult<K, V> emplaceHashed(IAllocator* p, const K& key, const usize keyHash, ARGS&&... args);
+
     [[nodiscard]] MapResult<K, V> search(const K& key);
     [[nodiscard]] const MapResult<K, V> search(const K& key) const;
 
@@ -268,12 +271,19 @@ template<typename ...ARGS> requires(std::is_constructible_v<V, ARGS...>)
 inline MapResult<K, V>
 Map<K, V, FN_HASH>::emplace(IAllocator* p, const K& key, ARGS&&... args)
 {
+    return emplaceHashed(p, key, FN_HASH(key), std::forward<ARGS>(args)...);
+}
+
+template<typename K, typename V, usize (*FN_HASH)(const K&)>
+template<typename ...ARGS> requires(std::is_constructible_v<V, ARGS...>)
+inline MapResult<K, V>
+Map<K, V, FN_HASH>::emplaceHashed(IAllocator* p, const K& key, const usize keyHash, ARGS&&... args)
+{
     if (m_vBuckets.cap() <= 0)
         *this = {p};
     else if (loadFactor() >= m_maxLoadFactor)
         rehash(p, m_vBuckets.cap() * 2);
 
-    usize keyHash = FN_HASH(key);
     const isize idx = insertionIdx(keyHash, key);
     auto& bucket = m_vBuckets[idx];
 
@@ -373,29 +383,25 @@ template<typename K, typename V, usize (*FN_HASH)(const K&)>
 inline MapResult<K, V>
 Map<K, V, FN_HASH>::tryInsert(IAllocator* p, const K& key, const V& val)
 {
-    auto f = search(key);
-    if (f) return f;
-    else return emplace(p, key, val);
+    return tryEmplace(p, key, val);
 }
 
 template<typename K, typename V, usize (*FN_HASH)(const K&)>
 inline MapResult<K, V>
 Map<K, V, FN_HASH>::tryInsert(IAllocator* p, const K& key, V&& val)
 {
-    auto f = search(key);
-    if (f) return f;
-    else return emplace(p, key, std::move(val));
+    return tryEmplace(p, key, std::move(val));
 }
-
 
 template<typename K, typename V, usize (*FN_HASH)(const K&)>
 template<typename ...ARGS>
 inline MapResult<K, V>
 Map<K, V, FN_HASH>::tryEmplace(IAllocator* p, const K& key, ARGS&&... args)
 {
-    auto f = search(key);
+    const usize keyHash = FN_HASH(key);
+    auto f = searchHashed(key, keyHash);
     if (f) return f;
-    else return emplace(p, key, std::forward<ARGS>(args)...);
+    else return emplaceHashed(p, key, keyHash, std::forward<ARGS>(args)...);
 }
 
 template<typename K, typename V, usize (*FN_HASH)(const K&)>
