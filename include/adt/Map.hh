@@ -191,6 +191,11 @@ public:
 
     const It begin() const { return {this, firstI()}; }
     const It end() const { return {this, NPOS}; }
+
+protected:
+#if !defined NDEBUG && defined ADT_DBG_COLLISIONS
+    mutable i64 m_nCollisions = 0;
+#endif
 };
 
 template<typename K, typename V, usize (*FN_HASH)(const K&)>
@@ -486,6 +491,9 @@ Map<K, V, FN_HASH>::insertionIdx(usize hash, const K& key) const
     {
         if (m_vBuckets[idx].key == key) break;
 
+#if !defined NDEBUG && defined ADT_DBG_COLLISIONS
+        print::err("[Map::insertionIdx]: collision at: {} (keys: '{}' and '{}'), nCollisions: {}\n", idx, key, m_vBuckets[idx].key, m_nCollisions++);
+#endif
         idx = utils::cycleForwardPowerOf2(idx, m_vBuckets.size());
     }
 

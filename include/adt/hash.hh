@@ -199,4 +199,11 @@ dumbFunc(const T& key)
     return static_cast<usize>(key);
 }
 
+template<typename T>
+inline constexpr usize
+cantorPair(const T& k0, const T& k1)
+{
+    return (((k0 + k1))/2) * (k0 + k1 + 1) + k1;
+}
+
 } /* namespace adt::hash */
