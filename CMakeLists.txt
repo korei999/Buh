@@ -252,7 +252,7 @@ if (OPT_MIMALLOC)
 endif()
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client)
+pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client wayland-protocols)
 
 include_directories(BEFORE ${WAYLAND_CLIENT_INCLUDE_DIRS})
 target_link_libraries(
