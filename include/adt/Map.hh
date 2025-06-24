@@ -448,7 +448,6 @@ Map<K, V, FN_HASH>::searchHashed(const K& key, usize keyHash) const
         return res;
     }
 
-    // isize idx = isize(keyHash % usize(m_vBuckets.cap()));
     isize idx = isize(keyHash & usize(m_vBuckets.cap() - 1));
     res.hash = keyHash;
 
