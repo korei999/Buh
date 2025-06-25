@@ -56,7 +56,7 @@ parseArgs(const int argc, const char* const* argv)
                     int num = atoi(argv[++i]);
                     if (num < 0 || num >= utils::size(config::aColorSchemes))
                     {
-                        print::err("index must be '>= 0 && < {}', got: '{}'\n", num, utils::size(config::aColorSchemes));
+                        print::err("index must be '>= 0 && < {}', got: '{}'\n", utils::size(config::aColorSchemes), num);
                         exit(1);
                     }
                     config::inl_colorScheme = config::aColorSchemes[num];
