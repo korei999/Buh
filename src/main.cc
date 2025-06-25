@@ -8,11 +8,7 @@
 
 #include <clocale>
 
-#if __has_include("configUser.hh") && defined OPT_USER_CONFIG
-    #include "configUser.hh"
-#else
-    #include "configDefault.hh"
-#endif /* __has_include("configUser.hh") && defined OPT_USER_CONFIG */
+#include "config.hh"
 
 using namespace adt;
 
@@ -122,9 +118,6 @@ startup()
 
     new(&app::g_wlClient) wayland::Client {"Buh", s_barHeight};
     defer( app::g_wlClient.destroy() );
-
-    // new(&app::g_wirePlumber) WirePlumber {INIT};
-    // defer( app::g_wirePlumber.destroy() );
 
     app::g_bRunning = true;
 
