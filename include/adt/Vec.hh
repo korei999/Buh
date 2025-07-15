@@ -324,7 +324,12 @@ inline void
 Vec<T>::popAsLast(isize i) noexcept
 {
     ADT_ASSERT(m_size > 0, "empty");
-    operator[](i) = last();
+
+    operator[](i) = std::move(last());
+
+    if constexpr (!std::is_trivially_destructible_v<T>)
+        operator[](lastI()).~T();
+
     --m_size;
 }
 
@@ -403,7 +408,7 @@ template<typename T>
 inline void
 Vec<T>::zeroOut() noexcept
 {
-    memset(m_pData, 0, m_size * sizeof(T));
+    utils::memSet(m_pData, 0, m_size);
 }
 
 template<typename T>

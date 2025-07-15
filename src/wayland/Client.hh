@@ -36,6 +36,7 @@ struct Client
         adt::StringFixed<128> m_sfAppid {};
         adt::StringFixed<8> m_sfLayoutIcon {};
         adt::StringFixed<32> m_sfKbLayout {};
+        bool m_bTearing {};
 
         adt::Vec<Tag> m_vTags {};
 
@@ -55,6 +56,7 @@ struct Client
         void appid(zdwl_ipc_output_v2* zdwl_ipc_output_v2, const char* appid);
         void layoutSymbol(zdwl_ipc_output_v2* zdwl_ipc_output_v2, const char* layout);
         void keyboardLayout(zdwl_ipc_output_v2* zdwl_ipc_output_v2, const char* kblayout);
+        void tearingStatus(zdwl_ipc_output_v2* zdwl_ipc_output_v2, int bTearing);
         void frame(zdwl_ipc_output_v2* zdwl_ipc_output_v2);
         void fullscreen(zdwl_ipc_output_v2* zdwl_ipc_output_v2, adt::u32 is_fullscreen);
         void floating(zdwl_ipc_output_v2* zdwl_ipc_output_v2, adt::u32 is_floating);

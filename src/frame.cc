@@ -324,6 +324,16 @@ run()
                                 }
                                 break;
 
+                                case config::StatusEntry::TYPE::GLOBAL_TEARING_STATUS:
+                                {
+                                    config::String64 sf {};
+                                    const isize nWritten = print::toSpan(sf.data(), "Tearing: {}", rBar.m_bTearing ? "on" : "off");
+                                    xOffStatus -= nWritten*xMove;
+                                    entry.sfHolder = StringView {sf.data(), nWritten};
+                                    vEntryStrings.emplace(&arena, entry.sfHolder.data(), xOffStatus);
+                                }
+                                break;
+
                                 case config::StatusEntry::TYPE::FILE_WATCH:
                                 {
                                     auto clWrite = [&]

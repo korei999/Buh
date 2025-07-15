@@ -106,6 +106,7 @@ static const zdwl_ipc_output_v2_listener s_dwlOutputListener {
     .layout_symbol = decltype(zdwl_ipc_output_v2_listener::layout_symbol)(methodPointerNonVirtual(&Client::Bar::layoutSymbol)),
 #ifdef OPT_IPC_KBLAYOUT
     .kblayout = decltype(zdwl_ipc_output_v2_listener::kblayout)(methodPointerNonVirtual(&Client::Bar::keyboardLayout)),
+    .tearing = decltype(zdwl_ipc_output_v2_listener::tearing)(methodPointerNonVirtual(&Client::Bar::tearingStatus)),
 #endif
     .frame = decltype(zdwl_ipc_output_v2_listener::frame)(methodPointerNonVirtual(&Client::Bar::frame)),
     .fullscreen = decltype(zdwl_ipc_output_v2_listener::fullscreen)(methodPointerNonVirtual(&Client::Bar::fullscreen)),

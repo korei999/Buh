@@ -138,6 +138,12 @@ Client::Bar::keyboardLayout(
 }
 
 void
+Client::Bar::tearingStatus(zdwl_ipc_output_v2*, int bTearing)
+{
+    m_bTearing = bTearing;
+}
+
+void
 Client::Bar::frame([[maybe_unused]] zdwl_ipc_output_v2* zdwl_ipc_output_v2)
 {
     frame::g_bRedraw = true;

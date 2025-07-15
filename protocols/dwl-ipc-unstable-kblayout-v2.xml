@@ -144,6 +144,13 @@ I would probably just submit raphi's patchset but I don't think that would be po
       <arg name="kblayout" type="string" summary="The new kblayout."/>
     </event>
 
+    <event name="tearing" since="1">
+      <description summary="Update the current global tearing status.">
+        Indicates the global tearing status has changed.
+      </description>
+      <arg name="tearing" type="int" summary="The new global tearing status."/>
+    </event>
+
     <event name="frame">
       <description summary="The update sequence is done.">
         Indicates that a sequence of status updates have finished and the client should redraw.
