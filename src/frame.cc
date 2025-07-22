@@ -40,7 +40,12 @@ fillBg(
 
     for (int yOff = y; yOff < maxHeight + y; ++yOff)
     {
+
+#ifdef ADT_AVX2
+        simd::i32Fillx8(Span<i32> {
+#else
         simd::i32Fillx4(Span<i32> {
+#endif
                 reinterpret_cast<i32*>(&sp(x, yOff)),
                 maxWidth
             },
@@ -223,21 +228,101 @@ run()
                             const auto [u, v] = mFoundUV.value();
     
                             const Span2D<u8> spAtlas = rRast.atlasSpan();
-                            const int maxx = utils::min(utils::min(rBar.m_width, maxAbsX), xOffset + thisXOff + xScale);
+
+                            const int maxx = utils::min(
+                                utils::min(rBar.m_width, maxAbsX),
+                                xOffset + thisXOff + xScale
+                            );
+
+                            const simd::f32x4 fgR = fg.r;
+                            const simd::f32x4 fgG = fg.g;
+                            const simd::f32x4 fgB = fg.b;
+                            const simd::f32x4 oneOver255 = 1.0f/255.0f;
+                            const simd::i32x4 maskFF = 0xff;
+
+#ifdef ADT_AVX2
+                            const simd::f32x8 fgRx8 = fg.r;
+                            const simd::f32x8 fgGx8 = fg.g;
+                            const simd::f32x8 fgBx8 = fg.b;
+                            const simd::f32x8 oneOver255x8 = 1.0f/255.0f;
+                            const simd::i32x8 maskFFx8 = 0xff;
+#endif
+
+                            if (xOffset + thisXOff < 0 || xOffset + thisXOff >= spBuffer.width())
+                                return 0;
+
                             for (int y = 0; y < yScale; ++y)
                             {
-                                for (int x = xOffset + thisXOff; x < maxx; ++x)
-                                {
-                                    if (x < 0) break;
+                                int x = xOffset + thisXOff;
+                                const u8* pAtlas = &spAtlas((x - xOffset - thisXOff) + u, y + v);
+                                u32* pDest = &spBuffer(x, rBar.m_height - 1 - y - yOff);
 
-                                    const u8 val = spAtlas((x - xOffset - thisXOff) + u, y + v);
+#ifdef ADT_AVX2
+                                for (; x + 7 < maxx; x += 8, pAtlas += 8, pDest += 8)
+                                {
+                                    const simd::i32x4 atlas8 = simd::i32x4LoadI32x2(*reinterpret_cast<const u64*>(pAtlas));
+                                    const simd::f32x8 t = simd::f32x8(_mm256_cvtepu8_epi32(atlas8.pack)) * oneOver255x8;
+
+                                    const simd::i32x8 dest = simd::i32x8Load(reinterpret_cast<i32*>(pDest));
+
+                                    const simd::i32x8 r32 = (dest >> 16) & maskFFx8;
+                                    const simd::i32x8 g32 = (dest >> 8) & maskFFx8;
+                                    const simd::i32x8 b32 = dest & maskFFx8;
+
+                                    const simd::f32x8 rf = r32;
+                                    const simd::f32x8 gf = g32;
+                                    const simd::f32x8 bf = b32;
+
+                                    /* lerp */
+                                    const simd::f32x8 r = rf + t*(fgRx8 - rf);
+                                    const simd::f32x8 g = gf + t*(fgGx8 - gf);
+                                    const simd::f32x8 b = bf + t*(fgBx8 - bf);
+
+                                    const simd::i32x8 ri = simd::i32x8(r) & maskFFx8;
+                                    const simd::i32x8 gi = simd::i32x8(g) & maskFFx8;
+                                    const simd::i32x8 bi = simd::i32x8(b) & maskFFx8;
+
+                                    const simd::i32x8 out = ri << 16 | gi << 8 | bi | 0xff000000;
+                                    simd::i32x8Store(reinterpret_cast<i32*>(pDest), out);
+                                }
+#endif
+
+                                for (; x + 3 < maxx; x += 4, pAtlas += 4, pDest += 4)
+                                {
+                                    const simd::i32x4 atlas4 = *reinterpret_cast<const i32*>(pAtlas);
+                                    const simd::f32x4 t = simd::f32x4(_mm_cvtepu8_epi32(atlas4.pack)) * oneOver255;
+
+                                    const simd::i32x4 dest = simd::i32x4Load(reinterpret_cast<i32*>(pDest));
+
+                                    const simd::i32x4 r32 = (dest >> 16) & maskFF;
+                                    const simd::i32x4 g32 = (dest >> 8) & maskFF;
+                                    const simd::i32x4 b32 = dest & maskFF;
+
+                                    const simd::f32x4 rf = r32;
+                                    const simd::f32x4 gf = g32;
+                                    const simd::f32x4 bf = b32;
+
+                                    /* lerp */
+                                    const simd::f32x4 r = rf + t*(fgR - rf);
+                                    const simd::f32x4 g = gf + t*(fgG - gf);
+                                    const simd::f32x4 b = bf + t*(fgB - bf);
+
+                                    const simd::i32x4 ri = simd::i32x4(r) & maskFF;
+                                    const simd::i32x4 gi = simd::i32x4(g) & maskFF;
+                                    const simd::i32x4 bi = simd::i32x4(b) & maskFF;
+
+                                    const simd::i32x4 out = ri << 16 | gi << 8 | bi | 0xff000000;
+                                    simd::i32x4Store(reinterpret_cast<i32*>(pDest), out);
+                                }
+
+                                for (; x < maxx; ++x, ++pAtlas, ++pDest)
+                                {
+                                    const u8 val = *pAtlas;
                                     if (val == 0) continue;
 
-                                    auto& rDest = reinterpret_cast<ImagePixelARGBle&>(spBuffer(
-                                        x, rBar.m_height - 1 - y - yOff
-                                    ));
+                                    const f32 t = val * (1.0f/255.0f);
 
-                                    const f32 t = val / 255.0f;
+                                    auto& rDest = reinterpret_cast<ImagePixelARGBle&>(*pDest);
 
                                     rDest.a = 0xff;
                                     rDest.r = u8(math::lerp(rDest.r, fg.r, t));
