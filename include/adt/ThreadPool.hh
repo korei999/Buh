@@ -121,7 +121,7 @@ struct ThreadPool : IThreadPool
 
     ThreadPool() = default;
 
-    ThreadPool(IAllocator* pAlloc, int nThreads = ADT_GET_NPROCS());
+    ThreadPool(IAllocator* pAlloc, int nThreads = utils::max(ADT_GET_NPROCS() - 1, 1));
 
     ThreadPool(
         IAllocator* pAlloc,
@@ -309,7 +309,7 @@ struct ThreadPoolWithMemory : IThreadPoolWithMemory
 
     ThreadPoolWithMemory() = default;
 
-    ThreadPoolWithMemory(IAllocator* pAlloc, isize nBytesEachBuffer, int nThreads = ADT_GET_NPROCS())
+    ThreadPoolWithMemory(IAllocator* pAlloc, isize nBytesEachBuffer, int nThreads = utils::max(ADT_GET_NPROCS() - 1, 1))
         : m_base(
             pAlloc,
             +[](void* p) { allocScratchBufferForThisThread(reinterpret_cast<isize>(p)); },
