@@ -1,6 +1,7 @@
 #include "Rasterizer.hh"
 #include "Parser.hh"
 
+#include "adt/sort.hh"
 #include "adt/math.hh"
 #include "adt/BufferAllocator.hh"
 #include "adt/Array.hh"
