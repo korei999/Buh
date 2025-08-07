@@ -167,8 +167,8 @@ formatVolume(const char* ntsOutput)
 
 inline StatusEntry g_aStatusEntries[] {
     StatusEntry::makeExec(formatVolume, 5000.0, 9, "wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"),
-    StatusEntry::makeFileWatch("/sys/class/drm/card1/device/hwmon/hwmon3/temp2_input", 3000.0, formatGpuTempC),
-    StatusEntry::makeFileWatch("/sys/class/drm/card1/device/hwmon/hwmon3/power1_input", 3000.0, formatGpuPower),
+    StatusEntry::makeFileWatch("/sys/class/drm/card2/device/hwmon/hwmon3/temp2_input", 3000.0, formatGpuTempC),
+    StatusEntry::makeFileWatch("/sys/class/drm/card2/device/hwmon/hwmon3/power1_input", 3000.0, formatGpuPower),
     // StatusEntry::makeFileWatch("/sys/class/drm/card1/device/hwmon/hwmon3/power1_average", 3000.0, formatGpuPower), /* 6750xt */
     StatusEntry::makeDateTime("%Y-%m-%d %I:%M%p", 1000.0*10), /* `man strftime` */
 #ifdef OPT_IPC_KBLAYOUT

@@ -456,12 +456,9 @@ namespace adt::print
 {
 
 inline isize
-formatToContext(Context ctx, FormatArgs, const ttf::TableRecord& x)
+format(Context ctx, FormatArgs fmtArgs, const ttf::TableRecord& x)
 {
-    ctx.fmt = "{}, {}, {}, {}";
-    ctx.fmtIdx = 0;
-
-    return printArgs(ctx, x.tag, x.checkSum, x.offset, x.length);
+    return formatVariadic(ctx, fmtArgs, x.tag, x.checkSum, x.offset, x.length);
 }
 
 } /* namespace adt::print */

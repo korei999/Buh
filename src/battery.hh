@@ -24,12 +24,12 @@ namespace adt::print
 {
 
 inline isize
-formatToContext(Context ctx, FormatArgs fmtArgs, const battery::STATUS x)
+format(Context ctx, FormatArgs fmtArgs, const battery::STATUS x)
 {
     constexpr StringView map[] {
         "Error", "Discharching", "Charging", "Not charching", "Full"
     };
-    return formatToContext(ctx, fmtArgs, map[int(x)]);
+    return format(ctx, fmtArgs, map[int(x)]);
 }
 
 } /* namespace adt::print */

@@ -238,7 +238,7 @@ run()
                             const simd::f32x4 fgG = fg.g;
                             const simd::f32x4 fgB = fg.b;
                             const simd::f32x4 oneOver255 = 1.0f/255.0f;
-                            const simd::i32x4 maskFF = 0xff;
+                            const simd::i32x4 maskFF {0xff};
 
 #ifdef ADT_AVX2
                             const simd::f32x8 fgRx8 = fg.r;
@@ -286,7 +286,6 @@ run()
                                     simd::i32x8Store(reinterpret_cast<i32*>(pDest), out);
                                 }
 #endif
-
                                 for (; x + 3 < maxx; x += 4, pAtlas += 4, pDest += 4)
                                 {
                                     const simd::i32x4 atlas4 = *reinterpret_cast<const i32*>(pAtlas);
@@ -298,9 +297,9 @@ run()
                                     const simd::i32x4 g32 = (dest >> 8) & maskFF;
                                     const simd::i32x4 b32 = dest & maskFF;
 
-                                    const simd::f32x4 rf = r32;
-                                    const simd::f32x4 gf = g32;
-                                    const simd::f32x4 bf = b32;
+                                    const simd::f32x4 rf = simd::f32x4(r32);
+                                    const simd::f32x4 gf = simd::f32x4(g32);
+                                    const simd::f32x4 bf = simd::f32x4(b32);
 
                                     /* lerp */
                                     const simd::f32x4 r = rf + t*(fgR - rf);

@@ -72,6 +72,9 @@ using null = decltype(nullptr);
 struct InitFlag {};
 constexpr InitFlag INIT {};
 
+struct UninitFlag {};
+constexpr UninitFlag UNINIT {};
+
 #define ADT_WARN_INIT [[deprecated("warning: should be initialized with (INIT)")]]
 #define ADT_WARN_DONT_USE [[deprecated("warning: don't use!")]]
 #define ADT_WARN_IMPOSSIBLE_OPERATION [[deprecated("warning: imposibble operation")]]
@@ -88,13 +91,13 @@ constexpr InitFlag INIT {};
 
 #if defined __clang__ || __GNUC__
     #define ADT_ALWAYS_INLINE inline __attribute__((__always_inline__))
-#elif defined _WIN32
+#elif defined _MSC_VER
     #define ADT_ALWAYS_INLINE inline __forceinline
 #else
     #define ADT_ALWAYS_INLINE inline
 #endif
 
-#if defined _WIN32
+#if defined _MSC_VER
     #define ADT_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
 #else
     #define ADT_NO_UNIQUE_ADDRESS [[no_unique_address]]

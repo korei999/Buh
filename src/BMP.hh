@@ -228,7 +228,7 @@ namespace adt::print
 {
 
 inline isize
-formatToContext(Context ctx, FormatArgs fmtArgs, bmp::COMPRESSION_METHOD_ID eCompressionMethod) noexcept
+format(Context ctx, FormatArgs fmtArgs, bmp::COMPRESSION_METHOD_ID eCompressionMethod) noexcept
 {
     constexpr String asMethods[] {
         "BI_RGB",
@@ -245,7 +245,7 @@ formatToContext(Context ctx, FormatArgs fmtArgs, bmp::COMPRESSION_METHOD_ID eCom
 
     ADT_ASSERT(int(eCompressionMethod) < utils::size(asMethods), " ");
 
-    return formatToContext(ctx, fmtArgs, asMethods[eCompressionMethod]);
+    return format(ctx, fmtArgs, asMethods[eCompressionMethod]);
 }
 
 } /* namespace adt::print */

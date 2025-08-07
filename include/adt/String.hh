@@ -305,16 +305,7 @@ struct StringWordIt
             isize start = m_i;
             isize end = m_i;
 
-            auto oneOf = [&](char c) -> bool
-            {
-                for (auto sep : m_svSeps)
-                    if (c == sep)
-                        return true;
-
-                return false;
-            };
-
-            while (end < m_svStr.m_size && !oneOf(m_svStr[end]))
+            while (end < m_svStr.m_size && !m_svSeps.contains(m_svStr[end]))
                 end++;
 
             m_svCurrWord = {const_cast<char*>(&m_svStr[start]), end - start};
@@ -478,7 +469,7 @@ StringView::removeNLEnd()
 }
 
 inline bool
-StringView::contains(const StringView r) const
+StringView::contains(const StringView r) const noexcept
 {
     if (m_size < r.m_size || m_size == 0 || r.m_size == 0)
         return false;
@@ -501,11 +492,18 @@ StringView::contains(const StringView r) const
 #endif
 }
 
+inline bool
+StringView::contains(char c) const noexcept
+{
+    if (m_size < 0 || !m_pData) return false;
+    return memchr(m_pData, c, m_size) != nullptr;
+}
+
 inline isize
 StringView::subStringAt(const StringView r) const noexcept
 {
     if (m_size < r.m_size || m_size == 0 || r.m_size == 0)
-        return false;
+        return -1;
 
 #if __has_include(<unistd.h>)
 
@@ -525,6 +523,16 @@ StringView::subStringAt(const StringView r) const noexcept
 #endif
 
     return -1;
+}
+
+inline isize
+StringView::charAt(char c) const noexcept
+{
+    if (m_size < 0 || !m_pData) return -1;
+
+    const void* p = memchr(m_pData, c, m_size);
+    if (p) return static_cast<const char*>(p) - m_pData;
+    else return -1;
 }
 
 inline char&
@@ -587,6 +595,16 @@ StringView::toF64() const noexcept
     return strtod(m_pData, &pEnd);
 }
 
+inline StringView
+StringView::subString(isize start, isize size) const noexcept
+{
+    ADT_ASSERT(start + size <= m_size,
+        "out of range: ends at: {}, requested: {}",
+        m_size, start + size
+    );
+    return StringView((char*)&operator[](start), size);
+}
+
 template<typename T>
 ADT_NO_UB inline T
 StringView::reinterpret(isize at) const
@@ -624,15 +642,9 @@ template<typename LAMBDA>
 inline StringView&
 StringView::removeNLEnd(LAMBDA clFill)
 {
-    auto oneOf = [&](const char c) -> bool
-    {
-        constexpr StringView chars = "\r\n";
-        for (const char ch : chars)
-            if (c == ch) return true;
-        return false;
-    };
+    constexpr StringView svChars = "\r\n";
 
-    while (m_size > 0 && oneOf(last()))
+    while (m_size > 0 && svChars.contains(last()))
     {
         --m_size;
         clFill(&m_pData[m_size]);
@@ -783,14 +795,10 @@ inline String
 StringCat(IAllocator* p, const StringView& l, const StringView& r)
 {
     isize len = l.size() + r.size();
-    char* ret = p->zallocV<char>(len + 1);
+    char* ret = p->mallocV<char>(len + 1);
 
-    isize pos = 0;
-    for (isize i = 0; i < l.m_size; ++i, ++pos)
-        ret[pos] = l[i];
-    for (isize i = 0; i < r.m_size; ++i, ++pos)
-        ret[pos] = r[i];
-
+    strncpy(ret, l.m_pData, l.m_size);
+    strncpy(ret + l.m_size, r.m_pData, r.m_size);
     ret[len] = '\0';
 
     String sNew;

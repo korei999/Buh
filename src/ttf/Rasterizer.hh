@@ -47,9 +47,9 @@ namespace adt::print
 {
 
 inline isize
-formatToContext(Context ctx, FormatArgs fmtArgs, const ttf::Rasterizer::UV& x)
+format(Context ctx, FormatArgs fmtArgs, const ttf::Rasterizer::UV& x)
 {
-    return formatToContext(ctx, fmtArgs, adt::Pair {x.u, x.v});
+    return format(ctx, fmtArgs, adt::Pair {x.u, x.v});
 }
 
 } /* namespace adt::print */
