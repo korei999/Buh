@@ -1,8 +1,5 @@
 #pragma once
 
-#include "adt/Vec.hh"
-#include "adt/StdAllocator.hh" /* IWYU pragma: keep */
-
 #include "ColorScheme.hh"
 #include "battery.hh"
 

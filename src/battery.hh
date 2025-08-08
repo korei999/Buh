@@ -1,8 +1,5 @@
 #pragma once
 
-#include "adt/ScratchBuffer.hh"
-#include "adt/print.hh"
-
 namespace battery
 {
 

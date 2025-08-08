@@ -5,8 +5,6 @@
 
 #include "Image.hh"
 
-#include "adt/ThreadPool.hh"
-
 namespace ttf
 {
 

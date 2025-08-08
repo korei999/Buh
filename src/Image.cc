@@ -1,8 +1,5 @@
 #include "Image.hh"
 
-#include "adt/simd.hh"
-#include "adt/defer.hh"
-
 using namespace adt;
 
 Image

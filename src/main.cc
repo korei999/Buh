@@ -3,9 +3,6 @@
 
 #include "font.bin"
 
-#include "adt/file.hh"
-#include "adt/StdAllocator.hh"
-
 #include <clocale>
 
 #include "config.hh"

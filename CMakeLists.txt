@@ -34,7 +34,7 @@ option(OPT_USER_CONFIG "" ON)
 option(OPT_IPC_KBLAYOUT "" ON)
 option(OPT_MIMALLOC "" OFF)
 option(OPT_FAST_MATH "" OFF)
-option(OPT_PRECOMPILE_ADT "" OFF)
+option(OPT_PRECOMPILE_ADT "" ON)
 option(OPT_ANALYZE "" OFF)
 
 option(OPT_DBG_TTF "" OFF)
@@ -236,10 +236,39 @@ add_executable(
 )
 
 if (OPT_PRECOMPILE_ADT)
-    file(GLOB_RECURSE ADT_PRECOMPILED_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/libs/adt/*.hh")
+    # file(GLOB_RECURSE ADT_PRECOMPILED_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/adt/*")
+
+    set(ADT_PRECOMPILED_HEADERS
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/String.inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/String.hh
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/Thread.hh
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/ThreadPool.hh
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/Arena.hh
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/Vec.hh
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/atomic.hh
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/QueueArray.hh
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/print.inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/print.hh
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/logs.hh
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/Span2D.hh
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/Span.inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/Span.hh
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/ScratchBuffer.hh
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/BufferAllocator.hh
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/math.inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/math.hh
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/Array.hh
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/file.hh
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/bin.hh
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/Map.hh
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/sort.hh
+    )
 
     if (NOT OPT_MIMALLOC)
-        list(FILTER ADT_PRECOMPILED_HEADERS EXCLUDE REGEX ".*/adt/MiMalloc.hh")
+        list(REMOVE_ITEM
+            ADT_PRECOMPILED_HEADERS
+            "${CMAKE_CURRENT_SOURCE_DIR}/include/adt/MiMalloc.hh"
+        )
     endif()
 
     target_precompile_headers(

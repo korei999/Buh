@@ -1,10 +1,6 @@
 #include "battery.hh"
 
-#include "adt/file.hh"
-#include "adt/BufferAllocator.hh"
-
 using namespace adt;
-
 
 namespace battery
 {

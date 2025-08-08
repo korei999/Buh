@@ -4,10 +4,6 @@
 
 #include "Image.hh"
 
-#include "adt/String.hh" /* IWYU pragma: keep */
-#include "adt/defer.hh"
-#include "adt/logs.hh"
-
 namespace BMP
 {
 

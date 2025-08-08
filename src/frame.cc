@@ -3,12 +3,6 @@
 #include "app.hh"
 #include "exec.hh"
 
-#include "adt/file.hh"
-#include "adt/simd.hh"
-#include "adt/StdAllocator.hh"
-#include "adt/math.hh"
-#include "adt/Arena.hh"
-
 #include <signal.h>
 #include <poll.h>
 #include <sys/signalfd.h>

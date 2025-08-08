@@ -1,7 +1,5 @@
 #pragma once
 
-#include "adt/Vec.hh"
-
 #include "ColorScheme.hh"
 #include "battery.hh"
 
