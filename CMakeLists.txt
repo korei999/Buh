@@ -217,6 +217,9 @@ endif()
 message(STATUS "CMAKE_SYSTEM_NAME: '${CMAKE_SYSTEM_NAME}'")
 message(STATUS "CMAKE_SOURCE_DIR: '${CMAKE_SOURCE_DIR}'")
 
+add_library(ADT_PRECOMPILED_INTERFACE INTERFACE)
+link_libraries(ADT_PRECOMPILED_INTERFACE)
+
 add_executable(
     ${CMAKE_PROJECT_NAME}
 
@@ -236,33 +239,7 @@ add_executable(
 )
 
 if (OPT_PRECOMPILE_ADT)
-    # file(GLOB_RECURSE ADT_PRECOMPILED_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/adt/*")
-
-    set(ADT_PRECOMPILED_HEADERS
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/String.inc
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/String.hh
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/Thread.hh
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/ThreadPool.hh
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/Arena.hh
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/Vec.hh
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/atomic.hh
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/QueueArray.hh
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/print.inc
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/print.hh
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/logs.hh
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/Span2D.hh
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/Span.inc
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/Span.hh
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/ScratchBuffer.hh
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/BufferAllocator.hh
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/math.inc
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/math.hh
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/Array.hh
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/file.hh
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/bin.hh
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/Map.hh
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/adt/sort.hh
-    )
+    file(GLOB_RECURSE ADT_PRECOMPILED_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/adt/*")
 
     if (NOT OPT_MIMALLOC)
         list(REMOVE_ITEM
@@ -272,7 +249,7 @@ if (OPT_PRECOMPILE_ADT)
     endif()
 
     target_precompile_headers(
-        ${CMAKE_PROJECT_NAME} PRIVATE
+        ADT_PRECOMPILED_INTERFACE INTERFACE
         "$<$<COMPILE_LANGUAGE:CXX>:${ADT_PRECOMPILED_HEADERS}>"
     )
 endif()
@@ -320,6 +297,7 @@ message(STATUS "XDG_SHELL: '${XDG_SHELL}'")
 message(STATUS "WLR_LAYER_SHELL: '${WLR_LAYER_SHELL}'")
 message(STATUS "DWL_IPC: '${DWL_IPC}'")
 
+execute_process(COMMAND rm -rf ${CMAKE_SOURCE_DIR}/${WLPD})
 execute_process(COMMAND mkdir -p ${CMAKE_SOURCE_DIR}/${WLPD})
 execute_process(COMMAND ${WAYLAND_SCANNER} client-header ${XDG_SHELL} ${CMAKE_SOURCE_DIR}/${WLPD}/xdg-shell.h)
 execute_process(COMMAND ${WAYLAND_SCANNER} private-code  ${XDG_SHELL} ${CMAKE_SOURCE_DIR}/${WLPD}/xdg-shell.c)

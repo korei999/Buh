@@ -458,7 +458,7 @@ run()
                         ex.printErrorMsg(stderr);
                     }
     
-                    for (const Tag& tag : rBar.m_vTags)
+                    for (const wayland::Client::Bar::Tag& tag : rBar.m_vTags)
                     {
                         const isize tagI = rBar.m_vTags.idx(&tag);
                         char aTagStringBuff[4] {};

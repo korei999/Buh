@@ -3,8 +3,6 @@
 #include "WaylandGlueGenerated/wlr-layer-shell.h"
 #include "WaylandGlueGenerated/dwl-ipc.h"
 
-#include "Tag.hh"
-
 namespace wayland
 {
 
@@ -12,6 +10,15 @@ struct Client
 {
     struct Bar
     {
+        struct Tag
+        {
+            zdwl_ipc_output_v2_tag_state eState {};
+            int nClients {};
+            bool bFocused {};
+        };
+
+        /* */
+
         Client* m_pClient {};
         wl_output* m_pOutput {};
         wl_surface* m_pSurface {};
