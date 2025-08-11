@@ -21,7 +21,7 @@ struct PointOnCurve
     /*f32 _pad {};*/
 };
 
-Vec<PointOnCurve>
+static Vec<PointOnCurve>
 pointsWithMissingOnCurve(IAllocator* pAlloc, const Glyph& g)
 {
     const auto& aGlyphPoints = g.uGlyph.simple.vPoints;
