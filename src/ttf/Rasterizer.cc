@@ -174,14 +174,11 @@ makeItCurvy(IAllocator* pAlloc, const Vec<PointOnCurve>& aNonCurvyPoints, CurveE
 }
 
 void
-Rasterizer::rasterizeGlyph(ScratchBuffer* pScratch, const Parser& font, const Glyph& glyph, int xOff, int yOff)
+Rasterizer::rasterizeGlyph(IArena* pArena, const Parser& font, const Glyph& glyph, int xOff, int yOff)
 {
-    BufferAllocator buff = pScratch->nextMem<u8>();
-    defer( pScratch->reset() );
-
     CurveEndIdx endIdxs {};
     Vec<PointOnCurve> vCurvyPoints = makeItCurvy(
-        &buff, pointsWithMissingOnCurve(&buff, glyph), &endIdxs, 10
+        pArena, pointsWithMissingOnCurve(pArena, glyph), &endIdxs, 10
     );
 
     const f32 xMax = font.m_head.xMax;
@@ -268,8 +265,8 @@ Rasterizer::rasterizeGlyph(ScratchBuffer* pScratch, const Parser& font, const Gl
     }
 }
 
-adt::MapResult<u32, Rasterizer::UV>
-Rasterizer::addOrSearchGlyph(ScratchBuffer* pScratch, IAllocator* pAlloc, Parser* pFont, u32 code)
+MapResult<u32, Rasterizer::UV>
+Rasterizer::addOrSearchGlyph(IArena* pArena, IAllocator* pAlloc, Parser* pFont, u32 code)
 {
     auto mFound = m_mapCodeToUV.search(code);
     if (mFound) return mFound;
@@ -284,7 +281,7 @@ Rasterizer::addOrSearchGlyph(ScratchBuffer* pScratch, IAllocator* pAlloc, Parser
     const int yStep = std::round(m_scale);
     const i16 xStep = yStep * X_STEP;
 
-    rasterizeGlyph(pScratch, *pFont, *pGlyph, m_xOffAtlas, m_yOffAtlas);
+    rasterizeGlyph(pArena, *pFont, *pGlyph, m_xOffAtlas, m_yOffAtlas);
     auto mapRes = m_mapCodeToUV.insert(pAlloc, code, {m_xOffAtlas, m_yOffAtlas});
 
     if ((m_xOffAtlas += xStep) > (m_atlas.m_width) - xStep)
@@ -308,7 +305,7 @@ Rasterizer::addOrSearchGlyph(ScratchBuffer* pScratch, IAllocator* pAlloc, Parser
 }
 
 void
-Rasterizer::destroy(adt::IAllocator* pAlloc)
+Rasterizer::destroy(IAllocator* pAlloc)
 {
     pAlloc->free(m_atlas.m_uData.pARGBle);
     m_mapCodeToUV.destroy(pAlloc);
@@ -359,9 +356,18 @@ Rasterizer::rasterizeAscii(IAllocator* pAlloc, Parser* pFont, IThreadPoolWithMem
 
             const i16 xOff = m_xOffAtlas;
             const i16 yOff = m_yOffAtlas;
-            auto clRasterize = [this, pFont, pGlyph, xOff, yOff, pThreadPool]
-            {
-                rasterizeGlyph(&pThreadPool->scratchBuffer(), *pFont, *pGlyph, xOff, yOff);
+            auto clRasterize = [this, pFont, pGlyph, xOff, yOff, pThreadPool] {
+                try
+                {
+                    BufferAllocator al {pThreadPool->scratchBuffer().nextMem<u8>()};
+                    defer( pThreadPool->scratchBuffer().reset() );
+                    rasterizeGlyph(&al, *pFont, *pGlyph, xOff, yOff);
+                }
+                catch (const AllocException& ex)
+                {
+                    ex.printErrorMsg(stderr);
+                }
+
             };
 
             auto* pCl = buff.alloc<decltype(clRasterize)>(clRasterize);
@@ -370,15 +376,7 @@ Rasterizer::rasterizeAscii(IAllocator* pAlloc, Parser* pFont, IThreadPoolWithMem
             pThreadPool->addRetry(+[](void* pArg) -> THREAD_STATUS
                 {
                     auto& task = *static_cast<decltype(clRasterize)*>(pArg);
-
-                    try
-                    {
-                        task();
-                    }
-                    catch (const AllocException& ex)
-                    {
-                        ex.printErrorMsg(stderr);
-                    }
+                    task();
 
                     return THREAD_STATUS(0);
                 },

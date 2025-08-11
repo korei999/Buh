@@ -72,8 +72,8 @@ struct RefCounterOneAlloc : IRefCounter
     virtual void
     destroyData() noexcept
     {
-        auto* pData = reinterpret_cast<T*>((u8*)this + sizeof(RefCounterOneAlloc));
-        pData->~T();
+        T* pData = reinterpret_cast<T*>((u8*)this + sizeof(RefCounterOneAlloc));
+        utils::destruct(pData);
     }
 
     virtual void

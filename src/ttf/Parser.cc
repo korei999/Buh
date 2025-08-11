@@ -1,7 +1,5 @@
 #include "Parser.hh"
 
-#include <cmath>
-
 using namespace adt;
 
 namespace ttf

@@ -12,7 +12,7 @@ struct Report
 
     /* */
 
-    static Report read(const char* ntsPath, adt::ScratchBuffer* pScratch);
+    static Report read(const char* ntsPath, adt::IArena* pArena);
 };
 
 } /* namespace battery */

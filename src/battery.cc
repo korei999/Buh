@@ -6,7 +6,7 @@ namespace battery
 {
 
 Report
-Report::read(const char* ntsPath, adt::ScratchBuffer* pScratch)
+Report::read(const char* ntsPath, IArena* pArena)
 {
     file::TYPE eType = file::fileType(ntsPath);
     if (eType != file::TYPE::DIRECTORY)
@@ -17,11 +17,8 @@ Report::read(const char* ntsPath, adt::ScratchBuffer* pScratch)
 
     try
     {
-        BufferAllocator buffer = pScratch->nextMem<u8>();
-        defer( pScratch->reset() );
-
-        String sStatus = file::appendDirPath(&buffer, ntsPath, "status");
-        String sCapacity = file::appendDirPath(&buffer, ntsPath, "capacity");
+        String sStatus = file::appendDirPath(pArena, ntsPath, "status");
+        String sCapacity = file::appendDirPath(pArena, ntsPath, "capacity");
 
         Report report {};
 

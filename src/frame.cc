@@ -132,7 +132,8 @@ run()
         return ret;
     }();
 
-    Arena arena {SIZE_1K*3};
+    BufferAllocator arena {app::g_threadPool.scratchBuffer().nextMem<u8>()};
+    defer( app::g_threadPool.scratchBuffer().reset() );
 
     while (app::g_bRunning)
     {
@@ -168,9 +169,9 @@ run()
         {
             defer( g_bRedraw = false );
 
-            const f64 currTime = utils::timeNowMS();
+            const f64 currTime = time::nowMS();
 #ifndef NDEBUG
-            defer( COUT("drew in: {} ms\n", utils::timeNowMS() - currTime) );
+            defer( COUT("drew in: {} ms\n", time::nowMS() - currTime) );
 #endif
 
             for (wayland::Client::Bar* pBar : app::g_wlClient.m_vpBars)
@@ -179,17 +180,17 @@ run()
 
                 u32* pPoolBuffer = reinterpret_cast<u32*>(rBar.m_pPoolData);
                 Span2D<u32> spBuffer {pPoolBuffer, rBar.m_width, rBar.m_height, rBar.m_width};
-    
+
                 {
                     int xOff = 0;
                     const int yOff = 0;
-    
+
                     auto clDrawString = [&](
-                            const int xOffset,
-                            const StringView sv,
-                            const u32 fgColor,
-                            const int maxAbsX = 9999999
-                        ) -> int
+                        const int xOffset,
+                        const StringView sv,
+                        const u32 fgColor,
+                        const int maxAbsX = 9999999
+                    ) -> int
                     {
                         int thisXOff = 0;
 
@@ -198,7 +199,7 @@ run()
                         for (const wchar_t ch : StringWCharIt(sv))
                         {
                             defer( thisXOff += xMove );
-    
+
                             if (ch == L' ') continue;
                             if (ch == L'\n') break;
 
@@ -207,7 +208,7 @@ run()
                             try
                             {
                                 mFoundUV = rRast.addOrSearchGlyph(
-                                    &app::g_threadPool.scratchBuffer(),
+                                    &arena,
                                     StdAllocator::inst(),
                                     &app::g_font, ch
                                 );
@@ -217,10 +218,10 @@ run()
                                 ex.printErrorMsg(stderr);
                                 continue;
                             }
-    
+
                             if (!mFoundUV) continue;
                             const auto [u, v] = mFoundUV.value();
-    
+
                             const Span2D<u8> spAtlas = rRast.atlasSpan();
 
                             const int maxx = utils::min(
@@ -336,7 +337,8 @@ run()
                             clDrawString(offset, sv, config::inl_colorScheme.status.fg);
                         };
 
-                        Vec<Pair<StringView, int>> vEntryStrings {&arena};
+                        VecM<Pair<StringView, int>> vEntryStrings {};
+                        defer( vEntryStrings.destroy() );
 
                         auto clProcEntry = [&](config::StatusEntry* p, auto clWrite)
                         {
@@ -350,7 +352,7 @@ run()
                             }
 
                             xOffStatus -= p->sfHolder.size()*xMove;
-                            vEntryStrings.emplace(&arena, p->sfHolder, xOffStatus);
+                            vEntryStrings.emplace(p->sfHolder, xOffStatus);
                         };
 
                         const isize last = utils::size(config::g_aStatusEntries) - 1;
@@ -371,7 +373,7 @@ run()
                                     if (entry.nts != nullptr)
                                     {
                                         xOffStatus -= strlen(entry.nts) * xMove;
-                                        vEntryStrings.emplace(&arena, entry.nts, xOffStatus);
+                                        vEntryStrings.emplace(entry.nts, xOffStatus);
                                     }
                                 }
                                 break;
@@ -382,7 +384,7 @@ run()
                                     {
                                         config::String64 sf {};
 
-                                        const time_t now = time(NULL);
+                                        const time_t now = ::time(NULL);
                                         tm tm {};
                                         localtime_r(&now, &tm);
 
@@ -398,7 +400,7 @@ run()
                                 case config::StatusEntry::TYPE::KEYBOARD_LAYOUT:
                                 {
                                     xOffStatus -= rBar.m_sfKbLayout.size() * xMove;
-                                    vEntryStrings.emplace(&arena, rBar.m_sfKbLayout, xOffStatus);
+                                    vEntryStrings.emplace(rBar.m_sfKbLayout, xOffStatus);
                                 }
                                 break;
 
@@ -408,7 +410,7 @@ run()
                                     const isize nWritten = print::toSpan(sf.data(), "Tearing: {}", rBar.m_bTearing ? "on" : "off");
                                     xOffStatus -= nWritten*xMove;
                                     entry.sfHolder = StringView {sf.data(), nWritten};
-                                    vEntryStrings.emplace(&arena, entry.sfHolder.data(), xOffStatus);
+                                    vEntryStrings.emplace(entry.sfHolder.data(), xOffStatus);
                                 }
                                 break;
 
@@ -432,9 +434,7 @@ run()
                                     auto clWrite = [&]
                                     {
                                         config::String64 sf {};
-                                        battery::Report report = battery::Report::read(
-                                            entry.nts, &app::g_threadPool.scratchBuffer()
-                                        );
+                                        battery::Report report = battery::Report::read(entry.nts, &arena);
 
                                         if (entry.func.pfnFormatBattery)
                                             sf = entry.func.pfnFormatBattery(report);
@@ -457,7 +457,7 @@ run()
                     {
                         ex.printErrorMsg(stderr);
                     }
-    
+
                     for (const wayland::Client::Bar::Tag& tag : rBar.m_vTags)
                     {
                         const isize tagI = rBar.m_vTags.idx(&tag);
@@ -496,9 +496,9 @@ run()
                         xOff += xMove;
                         xOff += clDrawString(xOff, StringView {aTagStringBuff, n}, fgColor, xOffStatus);
                         xOff += xMove;
-    
+
                         const int tagXEnd = xOff;
-    
+
                         const int px = app::g_wlClient.m_pointer.surfacePointerX;
                         if (px >= tagXBegin && px < tagXEnd &&
                             app::g_wlClient.m_pointer.eButton == wayland::Client::Pointer::BUTTON::LEFT
@@ -522,7 +522,7 @@ run()
                     xOff += xMove;
                     xOff += clDrawString(xOff, rBar.m_sfTitle, config::inl_colorScheme.title.fg, xOffStatus);
                 }
-    
+
                 wl_surface_attach(rBar.m_pSurface, rBar.m_pBuffer, 0, 0);
                 wl_surface_damage_buffer(rBar.m_pSurface, 0, 0, rBar.m_width, rBar.m_height);
                 wl_surface_commit(rBar.m_pSurface);
