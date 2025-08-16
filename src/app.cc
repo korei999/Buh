@@ -15,6 +15,6 @@ wayland::Client g_wlClient {};
 ttf::Parser g_font {};
 ttf::Rasterizer g_rasterizer {};
 
-ThreadPoolWithMemory<128> g_threadPool {};
+ThreadPoolWithMemory g_threadPool {};
 
 } /* namespace app */

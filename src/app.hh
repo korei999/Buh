@@ -17,6 +17,6 @@ extern wayland::Client g_wlClient;
 extern ttf::Parser g_font;
 extern ttf::Rasterizer g_rasterizer;
 
-extern adt::ThreadPoolWithMemory<128> g_threadPool;
+extern adt::ThreadPoolWithMemory g_threadPool;
 
 } /* namespace app */

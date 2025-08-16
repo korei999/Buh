@@ -370,18 +370,8 @@ Rasterizer::rasterizeAscii(IAllocator* pAlloc, Parser* pFont, IThreadPoolWithMem
 
             };
 
-            auto* pCl = buff.alloc<decltype(clRasterize)>(clRasterize);
-
-            /* no data dependency between altas regions */
-            pThreadPool->addRetry(+[](void* pArg) -> THREAD_STATUS
-                {
-                    auto& task = *static_cast<decltype(clRasterize)*>(pArg);
-                    task();
-
-                    return THREAD_STATUS(0);
-                },
-                pCl
-            );
+            /* no data dependencies between altas regions */
+            pThreadPool->addRetry(clRasterize);
 
             if ((m_xOffAtlas += xStep) > (m_atlas.m_width) - xStep)
             {
@@ -398,7 +388,7 @@ Rasterizer::rasterizeAscii(IAllocator* pAlloc, Parser* pFont, IThreadPoolWithMem
         ex.printErrorMsg(stderr);
     }
 
-    pThreadPool->wait();
+    pThreadPool->wait(false);
 }
 
 } /* namespace ttf */

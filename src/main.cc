@@ -74,7 +74,7 @@ startup()
 {
     parseArgs(app::g_argc, app::g_argv);
 
-    new(&app::g_threadPool) ThreadPoolWithMemory<128> {StdAllocator::inst(), SIZE_1M};
+    new(&app::g_threadPool) ThreadPoolWithMemory {StdAllocator::inst(), 128, SIZE_1M};
 
     String sFile {};
     defer( sFile.destroy(StdAllocator::inst()) );

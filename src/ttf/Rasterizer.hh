@@ -21,7 +21,7 @@ struct Rasterizer
     /* */
 
     Image m_atlas {};
-    adt::Map<adt::u32, UV, adt::hash::dumbFunc> m_mapCodeToUV {};
+    adt::Map<adt::u32, UV> m_mapCodeToUV {};
     adt::f32 m_scale {};
     adt::i16 m_xOffAtlas {};
     adt::i16 m_yOffAtlas {};
